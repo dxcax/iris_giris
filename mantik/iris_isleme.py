@@ -1,8 +1,8 @@
-
 import os
 import cv2
+import joblib
 import numpy as np
-from skimage.feature import local_binary_pattern
+from skimage.feature import local_binary_pattern, hog
 
 
 class IrisIsleyici:
@@ -17,8 +17,6 @@ class IrisIsleyici:
 
     def on_isle(self, gri):
         gri = cv2.resize(gri, (640, 480))
-
-        # Kontrastı artırmadan önce hafif gürültü temizliği
         gri = cv2.bilateralFilter(gri, 7, 35, 35)
 
         clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
@@ -27,13 +25,75 @@ class IrisIsleyici:
         gri = cv2.GaussianBlur(gri, (5, 5), 0)
         return gri
 
+    def goz_yonu_ozellik_cikar(self, resim_yolu):
+        gri = cv2.imread(resim_yolu, cv2.IMREAD_GRAYSCALE)
+
+        if gri is None:
+            raise ValueError("Görüntü okunamadı.")
+
+        gri = cv2.resize(gri, (160, 80))
+
+        clahe = cv2.createCLAHE(clipLimit=2.0, tileGridSize=(8, 8))
+        gri = clahe.apply(gri)
+        gri = cv2.GaussianBlur(gri, (3, 3), 0)
+
+        hog_ozellik = hog(
+            gri,
+            orientations=9,
+            pixels_per_cell=(8, 8),
+            cells_per_block=(2, 2),
+            block_norm="L2-Hys",
+            feature_vector=True
+        )
+
+        sol_yari = gri[:, :80]
+        sag_yari = gri[:, 80:]
+
+        kenar = cv2.Canny(gri, 60, 140)
+        sol_kenar = kenar[:, :80]
+        sag_kenar = kenar[:, 80:]
+
+        ekstra = np.array([
+            np.mean(sol_yari),
+            np.mean(sag_yari),
+            np.std(sol_yari),
+            np.std(sag_yari),
+            np.mean(sol_kenar),
+            np.mean(sag_kenar),
+            np.std(sol_kenar),
+            np.std(sag_kenar),
+        ], dtype=np.float32)
+
+        return np.concatenate([hog_ozellik, ekstra]).astype(np.float32)
+
+    def goz_yonu_tahmin_et(self, resim_yolu, model_yolu="veriler/goz_yonu_model.pkl"):
+        if not os.path.exists(model_yolu):
+            return {
+                "yon": "bilinmiyor",
+                "guven": 0.0,
+                "mesaj": "Göz yönü modeli bulunamadı."
+            }
+
+        model = joblib.load(model_yolu)
+        ozellik = self.goz_yonu_ozellik_cikar(resim_yolu).reshape(1, -1)
+
+        tahmin = model.predict(ozellik)[0]
+
+        guven = 1.0
+        try:
+            skor = model.decision_function(ozellik)
+            skor_degeri = float(np.max(np.abs(skor)))
+            guven = min(1.0, skor_degeri / 2.5)
+        except Exception:
+            guven = 1.0
+
+        return {
+            "yon": tahmin,
+            "guven": guven,
+            "mesaj": "Tahmin başarılı."
+        }
+
     def gozbebegi_bul(self, gri):
-        """
-        Daha sade ve güvenli pupil bulma:
-        - Tüm görüntü yerine orta bölgeden ara
-        - Koyu ve merkeze yakın adayları seç
-        - Hough kullan ama filtreyi sıkı tut
-        """
         h, w = gri.shape
 
         x1 = int(w * 0.18)
@@ -84,7 +144,6 @@ class IrisIsleyici:
             merkez_uzaklik = np.sqrt((x - roi_merkez_x) ** 2 + (y - roi_merkez_y) ** 2)
             yaricap_cezasi = abs(r - 30)
 
-            # Alt satırdaki puan ne kadar düşükse o kadar iyi
             skor = ortalama * 2.4 + merkez_uzaklik * 0.35 + yaricap_cezasi * 2.8
 
             if skor < en_iyi_skor:
@@ -105,7 +164,6 @@ class IrisIsleyici:
         skorlar = []
 
         for aci in acilar:
-            # Üst ve alt kapak etkisini azalt
             sin_deger = abs(np.sin(aci))
             aci_agirligi = 1.0 - 0.65 * sin_deger
 
@@ -163,7 +221,6 @@ class IrisIsleyici:
             kenar_skor = self.dairesel_kenar_skoru(gri, gx, gy, r)
             kontrast_skor = self.halka_kontrast_skoru(gri, gx, gy, r)
 
-            # Çok küçük iris seçimini engelle
             kucuk_ceza = 0.0
             if r < gr * 2.3:
                 kucuk_ceza = (gr * 2.3 - r) * 1.8
@@ -309,16 +366,6 @@ class IrisIsleyici:
 
         return temiz
 
-    def yogunluk_ozellikleri(self, goruntu):
-        kucuk = cv2.resize(goruntu, (40, 20)).astype(np.float32).flatten()
-        kucuk /= 255.0
-
-        norm = np.linalg.norm(kucuk)
-        if norm > 1e-8:
-            kucuk /= norm
-
-        return kucuk
-
     def profil_gorseli_olustur(self, profil):
         min_deger = np.min(profil)
         max_deger = np.max(profil)
@@ -353,41 +400,47 @@ class IrisIsleyici:
 
     def gabor_ozellik_cikar(self, polar):
         ozellikler = []
-        
+
         frekanslar = [0.1, 0.2, 0.3]
-        acılar = [0, np.pi/4, np.pi/2, 3*np.pi/4]
-        
+        acilar = [0, np.pi / 4, np.pi / 2, 3 * np.pi / 4]
+
         for frek in frekanslar:
-            for aci in acılar:
+            for aci in acilar:
                 cekirdek = cv2.getGaborKernel(
-                    (15, 15), sigma=3.0,
-                    theta=aci, lambd=1.0/frek,
-                    gamma=0.5, psi=0
+                    (15, 15),
+                    sigma=3.0,
+                    theta=aci,
+                    lambd=1.0 / frek,
+                    gamma=0.5,
+                    psi=0
                 )
-                filtrelenmis = cv2.filter2D(polar.astype(np.float32), cv2.CV_32F, cekirdek)
-                
-                # Faz işareti al (IrisCode mantığı)
+
+                filtrelenmis = cv2.filter2D(
+                    polar.astype(np.float32),
+                    cv2.CV_32F,
+                    cekirdek
+                )
+
                 isaretler = np.sign(filtrelenmis).flatten()
                 ozellikler.append(isaretler)
-        
+
         return np.concatenate(ozellikler).astype(np.float32)
 
     def profil_vektoru_olustur(self, polar):
         lbp = self.lbp_ozellikleri(polar)
         gradyan = self.gradyan_ozellikleri(polar)
         gabor = self.gabor_ozellik_cikar(polar)
-        
-        # Gabor'a daha yüksek ağırlık ver
+
         gabor_norm = gabor / (np.linalg.norm(gabor) + 1e-8)
         lbp_norm = lbp / (np.linalg.norm(lbp) + 1e-8)
         gradyan_norm = gradyan / (np.linalg.norm(gradyan) + 1e-8)
-        
+
         profil = np.concatenate([
             gabor_norm * 0.65,
             lbp_norm * 0.25,
             gradyan_norm * 0.10
         ]).astype(np.float32)
-        
+
         return self.normalize_vektor(profil)
 
     def iris_profili_cikar(self, resim_yolu):
@@ -397,11 +450,17 @@ class IrisIsleyici:
         gozbebegi = self.gozbebegi_bul(onislenmis)
         iris = self.iris_bul(onislenmis, gozbebegi)
 
-        iris_halkasi, maske, konum_bilgisi = self.iris_halkasi_cikar(onislenmis, iris, gozbebegi)
+        iris_halkasi, maske, konum_bilgisi = self.iris_halkasi_cikar(
+            onislenmis,
+            iris,
+            gozbebegi
+        )
+
         polar = self.polar_normallestir(iris_halkasi, maske, konum_bilgisi)
         polar = self.polar_parlama_temizle(polar)
 
         profil = self.profil_vektoru_olustur(polar)
+
         if np.linalg.norm(profil) <= 1e-8:
             raise ValueError("İris profili üretilemedi.")
 
@@ -447,27 +506,6 @@ class IrisIsleyici:
             "profil_png_yolu": profil_png_yolu
         }
 
-    def birlesik_profil_olustur(self, resim1_yolu, resim2_yolu):
-        sonuc1 = self.iris_profili_cikar(resim1_yolu)
-        sonuc2 = self.iris_profili_cikar(resim2_yolu)
-
-        profil1 = sonuc1["profil"]
-        profil2 = sonuc2["profil"]
-
-        birlesik = (profil1 + profil2) / 2.0
-
-        norm = np.linalg.norm(birlesik)
-        if norm <= 1e-8:
-            raise ValueError("Birleşik iris profili üretilemedi.")
-
-        birlesik /= norm
-
-        return {
-            "profil": birlesik,
-            "sonuc1": sonuc1,
-            "sonuc2": sonuc2
-        }
-
     def polar_korelasyon(self, polar1, polar2):
         a = polar1.astype(np.float32).flatten()
         b = polar2.astype(np.float32).flatten()
@@ -481,6 +519,7 @@ class IrisIsleyici:
 
         skor = float(np.dot(a, b) / payda)
         skor = (skor + 1.0) / 2.0
+
         return max(0.0, min(1.0, skor))
 
     def kaydirmali_karsilastir(self, kayit_polar, giris_polar, kaydirma_araligi=20):

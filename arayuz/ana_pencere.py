@@ -4,11 +4,11 @@ import cv2
 import numpy as np
 
 from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QPixmap, QImage, QFont, QTextCursor
+from PyQt5.QtGui import QPixmap, QImage, QTextCursor
 from PyQt5.QtWidgets import (
     QWidget, QLabel, QPushButton, QLineEdit, QFileDialog,
     QVBoxLayout, QHBoxLayout, QFrame, QTextEdit, QSizePolicy,
-    QScrollArea
+    QStackedWidget, QGridLayout
 )
 
 from mantik.iris_isleme import IrisIsleyici
@@ -18,456 +18,760 @@ from mantik.veritabani import VeriTabani
 class AnaPencere(QWidget):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("İris Profili ile Giriş Sistemi")
-        self.setMinimumSize(1400, 900)
+
+        self.setWindowTitle("IrisGuard | Sağ-Sol İris Doğrulama")
+        self.setMinimumSize(1450, 900)
         self.showMaximized()
 
         self.iris_isleyici = IrisIsleyici()
         self.veritabani = VeriTabani()
 
-        self.kayit_resim1_yolu = ""
-        self.kayit_resim2_yolu = ""
-        self.giris_resim_yolu = ""
+        self.kayit_sag_goz_yolu = ""
+        self.kayit_sol_goz_yolu = ""
+        self.giris_sag_goz_yolu = ""
+        self.giris_sol_goz_yolu = ""
+
+        self.stack = QStackedWidget()
+        self.menu_btn = {}
+        self.metrikler = {}
 
         self.arayuzu_hazirla()
-        self.setStyleSheet("background-color: #0f172a;")
-        self.setAutoFillBackground(True)
+        self.setStyleSheet(self.stil())
 
-    def arayuzu_hazirla(self):
-        ana_duzen = QHBoxLayout()
-        ana_duzen.setContentsMargins(18, 18, 18, 18)
-        ana_duzen.setSpacing(18)
-
-        sol_panel = self.kayit_paneli_olustur()
-        sag_panel = self.giris_paneli_olustur()
-
-        sol_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        sag_panel.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-
-        ana_duzen.addWidget(sol_panel, 1)
-        ana_duzen.addWidget(sag_panel, 1)
-
-        self.setLayout(ana_duzen)
-
-    def ortak_stil(self):
+    def stil(self):
         return """
             QWidget {
-                background-color: #0f172a;
+                background-color: #07111f;
+                color: #e5e7eb;
+                font-family: Segoe UI;
+                font-size: 14px;
             }
-            QFrame {
-                background-color: #1e293b;
-                border: 1px solid #334155;
+
+            QFrame#sidebar {
+                background-color: #0b1628;
+                border: none;
+                border-right: 1px solid #1e293b;
+                border-radius: 0;
+            }
+
+            QFrame#pageCard {
+                background-color: #0f1b2d;
+                border: 1px solid #1e293b;
+                border-radius: 24px;
+            }
+
+            QFrame#softCard {
+                background-color: #101f33;
+                border: 1px solid #21324a;
+                border-radius: 20px;
+            }
+
+            QFrame#metricCard {
+                background-color: #0b1628;
+                border: 1px solid #1f334d;
                 border-radius: 18px;
             }
+
             QLabel {
-                color: #e2e8f0;
-                font-size: 14px;
                 background-color: transparent;
+                border: none;
             }
-            QLineEdit, QTextEdit {
-                background-color: #020617;
-                color: #e2e8f0;
-                border: 1px solid #475569;
-                border-radius: 10px;
-                padding: 10px;
-                font-size: 14px;
-                selection-background-color: #6366f1;
-                selection-color: white;
+
+            QLabel#appTitle {
+                color: #f8fafc;
+                font-size: 26px;
+                font-weight: 800;
             }
-            QLineEdit::placeholder {
+
+            QLabel#appSubTitle {
+                color: #64748b;
+                font-size: 12px;
+                font-weight: 600;
+            }
+
+            QLabel#pageTitle {
+                color: #f8fafc;
+                font-size: 28px;
+                font-weight: 800;
+            }
+
+            QLabel#pageDesc {
                 color: #94a3b8;
+                font-size: 14px;
             }
+
+            QLabel#sectionTitle {
+                color: #f8fafc;
+                font-size: 17px;
+                font-weight: 700;
+            }
+
+            QLabel#fieldLabel {
+                color: #cbd5e1;
+                font-size: 13px;
+                font-weight: 700;
+            }
+
+            QLabel#hintText {
+                color: #64748b;
+                font-size: 12px;
+            }
+
+            QLabel#imageBox {
+                background-color: #081120;
+                border: 1px dashed #334155;
+                border-radius: 18px;
+                color: #64748b;
+                font-size: 13px;
+                font-weight: 600;
+            }
+
+            QLabel#metricTitle {
+                color: #94a3b8;
+                font-size: 12px;
+                font-weight: 700;
+            }
+
+            QLabel#metricValue {
+                color: #f8fafc;
+                font-size: 22px;
+                font-weight: 800;
+            }
+
+            QLabel#statusBox {
+                background-color: #0b1628;
+                color: #e5e7eb;
+                border: 1px solid #334155;
+                border-radius: 22px;
+                font-size: 24px;
+                font-weight: 900;
+                padding: 22px;
+            }
+
+            QLineEdit {
+                background-color: #081120;
+                color: #f8fafc;
+                border: 1px solid #26384f;
+                border-radius: 14px;
+                padding: 14px 16px;
+                font-size: 14px;
+                font-weight: 600;
+            }
+
+            QLineEdit:focus {
+                border: 1px solid #38bdf8;
+                background-color: #0b1628;
+            }
+
+            QLineEdit::placeholder {
+                color: #64748b;
+            }
+
+            QTextEdit {
+                background-color: #081120;
+                color: #cbd5e1;
+                border: 1px solid #26384f;
+                border-radius: 18px;
+                padding: 14px;
+                font-family: Consolas;
+                font-size: 12px;
+            }
+
             QPushButton {
-                background-color: #6366f1;
+                background-color: #2563eb;
                 color: white;
                 border: none;
-                border-radius: 10px;
-                padding: 12px;
+                border-radius: 14px;
+                padding: 13px 16px;
                 font-size: 14px;
-                font-weight: bold;
+                font-weight: 800;
             }
+
             QPushButton:hover {
-                background-color: #4f46e5;
+                background-color: #1d4ed8;
             }
-            QScrollBar:vertical {
-                background: #020617;
-                width: 10px;
-                margin: 2px;
-                border-radius: 5px;
+
+            QPushButton:pressed {
+                background-color: #1e40af;
             }
-            QScrollBar::handle:vertical {
-                background: #6366f1;
-                border-radius: 5px;
-                min-height: 30px;
+
+            QPushButton#navButton {
+                background-color: transparent;
+                color: #94a3b8;
+                text-align: left;
+                padding: 14px 18px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
             }
-            QScrollBar::handle:vertical:hover {
-                background: #4f46e5;
+
+            QPushButton#navButton:hover {
+                background-color: #111f35;
+                color: #e5e7eb;
             }
-        """
 
-    def durum_kutusu_stili(self, durum):
-        if durum == "basarili":
-            return """
-                QLabel {
-                    background-color: #052e16;
-                    color: #bbf7d0;
-                    border: 3px solid #22c55e;
-                    border-radius: 16px;
-                    font-size: 24px;
-                    font-weight: bold;
-                    padding: 18px;
-                }
-            """
-        if durum == "basarisiz":
-            return """
-                QLabel {
-                    background-color: #450a0a;
-                    color: #fecaca;
-                    border: 3px solid #ef4444;
-                    border-radius: 16px;
-                    font-size: 24px;
-                    font-weight: bold;
-                    padding: 18px;
-                }
-            """
-        if durum == "bilgi":
-            return """
-                QLabel {
-                    background-color: #172554;
-                    color: #bfdbfe;
-                    border: 3px solid #3b82f6;
-                    border-radius: 16px;
-                    font-size: 22px;
-                    font-weight: bold;
-                    padding: 18px;
-                }
-            """
-        return """
-            QLabel {
-                background-color: #1e293b;
-                color: #e2e8f0;
-                border: 2px solid #475569;
-                border-radius: 16px;
-                font-size: 22px;
-                font-weight: bold;
-                padding: 18px;
+            QPushButton#activeNav {
+                background-color: #1d4ed8;
+                color: white;
+                text-align: left;
+                padding: 14px 18px;
+                border-radius: 14px;
+                font-size: 14px;
+                font-weight: 800;
             }
-        """
 
-    def sonuc_alani_sifirla(self):
-        self.sonuc_kutusu.setText("SONUÇ BEKLENİYOR")
-        self.sonuc_kutusu.setStyleSheet(self.durum_kutusu_stili("bos"))
-
-        self.detay_baslik.setText("Detaylar")
-        self.detay_benzerlik.setText("Benzerlik: -")
-        self.detay_mesafe.setText("Mesafe: -")
-        self.detay_esik.setText("Eşik: -")
-        self.detay_yorum.setText("Durum: Henüz doğrulama yapılmadı.")
-        self.detay_dosya1.setText("İris bölgesi: -")
-        self.detay_dosya2.setText("Polar görüntü: -")
-        self.detay_dosya3.setText("Profil görseli: -")
-        self.detay_en_iyi_skor.setText("En iyi skor: -")
-        self.detay_agirlikli_skor.setText("Ağırlıklı skor: -")
-        self.detay_en_kotu_skor.setText("En kötü skor: -")
-        self.detay_agirlikli_mesafe.setText("Ağırlıklı mesafe: -")
-        self.detay_en_kotu_mesafe.setText("En kötü mesafe: -")
-        self.detay_skor_farki.setText("Skor farkı: -")
-
-    def sonuc_alani_guncelle(
-        self,
-        durum,
-        baslik,
-        benzerlik=None,
-        mesafe=None,
-        esik_yazisi="-",
-        yorum="-",
-        iris_yolu="-",
-        polar_yolu="-",
-        profil_yolu="-",
-        en_iyi_skor=None,
-        agirlikli_skor=None,
-        en_kotu_skor=None,
-        agirlikli_mesafe=None,
-        en_kotu_mesafe=None,
-        skor_farki=None
-    ):
-        ikon = "✅" if durum == "basarili" else "❌" if durum == "basarisiz" else "ℹ️"
-        self.sonuc_kutusu.setText(f"{ikon} {baslik}")
-        self.sonuc_kutusu.setStyleSheet(self.durum_kutusu_stili(durum))
-
-        self.detay_baslik.setText("Detaylar ve Oranlar")
-
-        self.detay_benzerlik.setText("Benzerlik: -" if benzerlik is None else f"Benzerlik: {benzerlik:.4f}")
-        self.detay_mesafe.setText("Mesafe: -" if mesafe is None else f"Mesafe: {mesafe:.4f}")
-        self.detay_esik.setText(f"Eşik: {esik_yazisi}")
-        self.detay_yorum.setText(f"Durum: {yorum}")
-        self.detay_dosya1.setText(f"İris bölgesi: {iris_yolu}")
-        self.detay_dosya2.setText(f"Polar görüntü: {polar_yolu}")
-        self.detay_dosya3.setText(f"Profil görseli: {profil_yolu}")
-        self.detay_en_iyi_skor.setText(
-            "En iyi skor: -" if en_iyi_skor is None else f"En iyi skor: {en_iyi_skor:.4f}"
-        )
-        self.detay_agirlikli_skor.setText(
-            "Ağırlıklı skor: -" if agirlikli_skor is None else f"Ağırlıklı skor: {agirlikli_skor:.4f}"
-        )
-        self.detay_en_kotu_skor.setText(
-            "En kötü skor: -" if en_kotu_skor is None else f"En kötü skor: {en_kotu_skor:.4f}"
-        )
-        self.detay_agirlikli_mesafe.setText(
-            "Ağırlıklı mesafe: -" if agirlikli_mesafe is None else f"Ağırlıklı mesafe: {agirlikli_mesafe:.4f}"
-        )
-        self.detay_en_kotu_mesafe.setText(
-            "En kötü mesafe: -" if en_kotu_mesafe is None else f"En kötü mesafe: {en_kotu_mesafe:.4f}"
-        )
-        self.detay_skor_farki.setText(
-            "Skor farkı: -" if skor_farki is None else f"Skor farkı: {skor_farki:.4f}"
-        )
-
-    def resim_alani_olustur(self, metin):
-        etiket = QLabel(metin)
-        etiket.setAlignment(Qt.AlignCenter)
-        etiket.setMinimumHeight(170)
-        etiket.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        etiket.setStyleSheet(
-            "background-color: #020617; border: 1px dashed #475569; border-radius: 12px; color: #94a3b8;"
-        )
-        return etiket
-
-    def bilgi_satiri_olustur(self, metin):
-        etiket = QLabel(metin)
-        etiket.setWordWrap(True)
-        etiket.setMinimumHeight(34)
-        etiket.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Minimum)
-        etiket.setStyleSheet("""
-            QLabel {
-                background-color: #020617;
-                border: 1px solid #334155;
-                border-radius: 10px;
-                padding: 6px 8px;
-                font-size: 11px;
+            QPushButton#secondary {
+                background-color: #111f35;
                 color: #cbd5e1;
+                border: 1px solid #26384f;
             }
-        """)
-        return etiket
 
-    def kayit_log_yaz(self, mesaj):
-        self.kayit_log.append(mesaj)
-        self.kayit_log.moveCursor(QTextCursor.End)
-        self.kayit_log.ensureCursorVisible()
+            QPushButton#secondary:hover {
+                background-color: #1e293b;
+            }
 
-    def log_yaz(self, mesaj):
-        self.giris_log.append(mesaj)
-        self.giris_log.moveCursor(QTextCursor.End)
-        self.giris_log.ensureCursorVisible()
+            QPushButton#success {
+                background-color: #16a34a;
+            }
 
-    def kalite_puani_hesapla(self, sonuc):
-        iris_x, iris_y, iris_r = sonuc["iris"]
-        pupil_x, pupil_y, pupil_r = sonuc["gozbebegi"]
-        maske = sonuc["maske"]
-        polar = sonuc["polar"]
+            QPushButton#success:hover {
+                background-color: #15803d;
+            }
+        """
 
-        merkez_mesafe = np.sqrt((iris_x - pupil_x) ** 2 + (iris_y - pupil_y) ** 2)
-        merkez_orani = float(merkez_mesafe / max(iris_r, 1))
-        pupil_iris_orani = float(pupil_r / max(iris_r, 1))
-        maske_doluluk = float(np.count_nonzero(maske)) / float(max(maske.size, 1))
-        cok_parlak = float(np.mean(polar > 240))
-        cok_karanlik = float(np.mean(polar < 15))
-        polar_ortalama = float(np.mean(polar))
-        polar_std = float(np.std(polar))
+    def arayuzu_hazirla(self):
+        ana = QHBoxLayout()
+        ana.setContentsMargins(0, 0, 0, 0)
+        ana.setSpacing(0)
 
-        puan = 100.0
+        sidebar = self.sidebar_olustur()
 
-        if merkez_orani > 0.18:
-            puan -= 20
-        elif merkez_orani > 0.12:
-            puan -= 10
+        self.stack.addWidget(self.dashboard_sayfasi())
+        self.stack.addWidget(self.kayit_sayfasi())
+        self.stack.addWidget(self.giris_sayfasi())
 
-        if pupil_iris_orani < 0.22 or pupil_iris_orani > 0.58:
-            puan -= 20
-        elif pupil_iris_orani < 0.26 or pupil_iris_orani > 0.52:
-            puan -= 10
+        ana.addWidget(sidebar)
+        ana.addWidget(self.stack, 1)
 
-        if maske_doluluk < 0.30:
-            puan -= 20
-        elif maske_doluluk < 0.38:
-            puan -= 10
+        self.setLayout(ana)
+        self.sayfa_degistir(0)
 
-        if cok_parlak > 0.08:
-            puan -= 10
-        if cok_karanlik > 0.18:
-            puan -= 10
-
-        if polar_std < 22:
-            puan -= 15
-        elif polar_std < 28:
-            puan -= 8
-
-        if polar_ortalama < 45 or polar_ortalama > 210:
-            puan -= 10
-
-        puan = max(0.0, min(100.0, puan))
-
-        return {
-            "puan": puan,
-            "merkez_orani": merkez_orani,
-            "pupil_iris_orani": pupil_iris_orani,
-            "maske_doluluk": maske_doluluk,
-            "cok_parlak_orani": cok_parlak,
-            "cok_karanlik_orani": cok_karanlik,
-            "polar_ortalama": polar_ortalama,
-            "polar_std": polar_std
-        }
-
-    def kayit_paneli_olustur(self):
-        panel = QFrame()
-        panel.setStyleSheet(self.ortak_stil())
+    def sidebar_olustur(self):
+        sidebar = QFrame()
+        sidebar.setObjectName("sidebar")
+        sidebar.setFixedWidth(280)
 
         duzen = QVBoxLayout()
-        duzen.setContentsMargins(20, 20, 20, 20)
+        duzen.setContentsMargins(22, 28, 22, 28)
         duzen.setSpacing(12)
 
-        baslik = QLabel("Kayıt İşlemi")
-        baslik.setFont(QFont("Arial", 16, QFont.Bold))
-        baslik.setAlignment(Qt.AlignCenter)
+        title = QLabel("IrisGuard")
+        title.setObjectName("appTitle")
 
+        subtitle = QLabel("Biometric Access Panel")
+        subtitle.setObjectName("appSubTitle")
+
+        duzen.addWidget(title)
+        duzen.addWidget(subtitle)
+        duzen.addSpacing(30)
+
+        self.menu_btn["dashboard"] = self.nav_buton("Dashboard", lambda: self.sayfa_degistir(0))
+        self.menu_btn["kayit"] = self.nav_buton("Kullanıcı Kaydı", lambda: self.sayfa_degistir(1))
+        self.menu_btn["giris"] = self.nav_buton("Giriş Doğrulama", lambda: self.sayfa_degistir(2))
+
+        duzen.addWidget(self.menu_btn["dashboard"])
+        duzen.addWidget(self.menu_btn["kayit"])
+        duzen.addWidget(self.menu_btn["giris"])
+
+        duzen.addStretch()
+
+        info = QLabel("Model tabanlı sağ-sol göz kontrolü\nve çift iris doğrulama sistemi.")
+        info.setObjectName("hintText")
+        info.setWordWrap(True)
+
+        duzen.addWidget(info)
+
+        sidebar.setLayout(duzen)
+        return sidebar
+
+    def nav_buton(self, metin, fonksiyon):
+        btn = QPushButton(metin)
+        btn.setObjectName("navButton")
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setMinimumHeight(48)
+        btn.clicked.connect(fonksiyon)
+        return btn
+
+    def sayfa_degistir(self, index):
+        self.stack.setCurrentIndex(index)
+
+        keys = ["dashboard", "kayit", "giris"]
+        for i, key in enumerate(keys):
+            self.menu_btn[key].setObjectName("activeNav" if i == index else "navButton")
+            self.menu_btn[key].style().unpolish(self.menu_btn[key])
+            self.menu_btn[key].style().polish(self.menu_btn[key])
+
+    def sayfa_baslik(self, baslik, aciklama):
+        alan = QVBoxLayout()
+        alan.setSpacing(6)
+
+        title = QLabel(baslik)
+        title.setObjectName("pageTitle")
+
+        desc = QLabel(aciklama)
+        desc.setObjectName("pageDesc")
+
+        alan.addWidget(title)
+        alan.addWidget(desc)
+
+        return alan
+
+    def kart(self, object_name="pageCard"):
+        frame = QFrame()
+        frame.setObjectName(object_name)
+        frame.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        return frame
+
+    def buton(self, metin, fonksiyon, tip="primary"):
+        btn = QPushButton(metin)
+        btn.clicked.connect(fonksiyon)
+        btn.setCursor(Qt.PointingHandCursor)
+        btn.setMinimumHeight(48)
+
+        if tip == "secondary":
+            btn.setObjectName("secondary")
+        elif tip == "success":
+            btn.setObjectName("success")
+
+        return btn
+
+    def dashboard_sayfasi(self):
+        sayfa = QWidget()
+        ana = QVBoxLayout()
+        ana.setContentsMargins(36, 34, 36, 34)
+        ana.setSpacing(26)
+
+        ana.addLayout(self.sayfa_baslik(
+            "Dashboard",
+            "İris tabanlı kayıt, sağ-sol göz kontrolü ve giriş doğrulama işlemlerini buradan yönetebilirsin."
+        ))
+
+        grid = QGridLayout()
+        grid.setSpacing(20)
+
+        kart1 = self.dashboard_karti(
+            "Kullanıcı Kaydı",
+            "Sağ ve sol göz görselleri model ile kontrol edilir, sonra iris profili oluşturulur.",
+            "Kayda Git",
+            lambda: self.sayfa_degistir(1)
+        )
+
+        kart2 = self.dashboard_karti(
+            "Giriş Doğrulama",
+            "Kayıtlı kullanıcı çift göz doğrulaması ve çapraz kontrol ile test edilir.",
+            "Doğrulamaya Git",
+            lambda: self.sayfa_degistir(2)
+        )
+
+        kart3 = self.dashboard_bilgi_karti()
+
+        grid.addWidget(kart1, 0, 0)
+        grid.addWidget(kart2, 0, 1)
+        grid.addWidget(kart3, 1, 0, 1, 2)
+
+        ana.addLayout(grid)
+        ana.addStretch()
+
+        sayfa.setLayout(ana)
+        return sayfa
+
+    def dashboard_karti(self, baslik, aciklama, buton_metni, fonksiyon):
+        frame = self.kart("softCard")
+        duzen = QVBoxLayout()
+        duzen.setContentsMargins(28, 28, 28, 28)
+        duzen.setSpacing(14)
+
+        title = QLabel(baslik)
+        title.setObjectName("sectionTitle")
+
+        desc = QLabel(aciklama)
+        desc.setObjectName("pageDesc")
+        desc.setWordWrap(True)
+
+        duzen.addWidget(title)
+        duzen.addWidget(desc)
+        duzen.addStretch()
+        duzen.addWidget(self.buton(buton_metni, fonksiyon, "success"))
+
+        frame.setLayout(duzen)
+        return frame
+
+    def dashboard_bilgi_karti(self):
+        frame = self.kart("softCard")
+        duzen = QVBoxLayout()
+        duzen.setContentsMargins(28, 26, 28, 26)
+        duzen.setSpacing(10)
+
+        title = QLabel("Sistem Akışı")
+        title.setObjectName("sectionTitle")
+
+        desc = QLabel(
+            "1. Fotoğraf seçildiğinde model görüntüden sağ/sol göz tahmini yapar.\n"
+            "2. Yanlış alana yüklenen göz fotoğrafı kayıt veya girişe alınmaz.\n"
+            "3. Girişte sağ-sağ ve sol-sol iris eşleşmesi yapılır.\n"
+            "4. Ek olarak çapraz kontrol ile sağ-sol karışıklığı engellenir."
+        )
+        desc.setStyleSheet("color: #cbd5e1; font-size: 14px; line-height: 1.4;")
+
+        duzen.addWidget(title)
+        duzen.addWidget(desc)
+
+        frame.setLayout(duzen)
+        return frame
+
+    def kayit_sayfasi(self):
+        sayfa = QWidget()
+        ana = QVBoxLayout()
+        ana.setContentsMargins(36, 34, 36, 34)
+        ana.setSpacing(24)
+
+        ana.addLayout(self.sayfa_baslik(
+            "Kullanıcı Kaydı",
+            "Sağ ve sol göz görsellerini seçerek kullanıcı profili oluştur."
+        ))
+
+        govde = QHBoxLayout()
+        govde.setSpacing(22)
+
+        form_card = self.kart("pageCard")
+        form = QVBoxLayout()
+        form.setContentsMargins(28, 28, 28, 28)
+        form.setSpacing(15)
+
+        form.addWidget(self.label("Kullanıcı Adı"))
         self.kayit_kullanici = QLineEdit()
-        self.kayit_kullanici.setPlaceholderText("Kullanıcı adı giriniz")
+        self.kayit_kullanici.setPlaceholderText("Örn: emir")
+        form.addWidget(self.kayit_kullanici)
 
-        self.kayit_resim1_etiketi = self.resim_alani_olustur("Kayıt fotoğrafı 1 seçilmedi")
-        self.kayit_resim2_etiketi = self.resim_alani_olustur("Kayıt fotoğrafı 2 seçilmedi")
+        self.kayit_sag_goz_etiketi = self.resim_alani("Sağ göz görseli bekleniyor")
+        self.kayit_sol_goz_etiketi = self.resim_alani("Sol göz görseli bekleniyor")
 
-        btn1 = QPushButton("Kayıt İçin 1. İris Fotoğrafını Seç")
-        btn1.clicked.connect(self.kayit_resim1_sec)
+        form.addWidget(self.kayit_sag_goz_etiketi)
+        form.addWidget(self.buton("Sağ Göz Görseli Seç", self.kayit_sag_goz_sec, "secondary"))
 
-        btn2 = QPushButton("Kayıt İçin 2. İris Fotoğrafını Seç")
-        btn2.clicked.connect(self.kayit_resim2_sec)
+        form.addWidget(self.kayit_sol_goz_etiketi)
+        form.addWidget(self.buton("Sol Göz Görseli Seç", self.kayit_sol_goz_sec, "secondary"))
 
-        btn_kaydet = QPushButton("İris Profilini Oluştur ve Kaydet")
-        btn_kaydet.clicked.connect(self.kullanici_kaydet)
+        form.addStretch()
+        form.addWidget(self.buton("Profili Oluştur ve Kaydet", self.kullanici_kaydet, "success"))
 
-        self.kayit_log = QTextEdit()
-        self.kayit_log.setReadOnly(True)
-        self.kayit_log.setMinimumHeight(300)
-        self.kayit_log.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        form_card.setLayout(form)
 
-        duzen.addWidget(baslik)
-        duzen.addWidget(QLabel("Kullanıcı Adı"))
-        duzen.addWidget(self.kayit_kullanici)
-        duzen.addWidget(self.kayit_resim1_etiketi)
-        duzen.addWidget(btn1)
-        duzen.addWidget(self.kayit_resim2_etiketi)
-        duzen.addWidget(btn2)
-        duzen.addWidget(btn_kaydet)
-        duzen.addWidget(QLabel("Kayıt Günlüğü"))
-        duzen.addWidget(self.kayit_log, 1)
+        log_card = self.log_karti("Kayıt Günlüğü")
+        self.kayit_log = log_card["log"]
 
-        panel.setLayout(duzen)
-        return panel
+        govde.addWidget(form_card, 1)
+        govde.addWidget(log_card["card"], 1)
 
-    def giris_paneli_olustur(self):
-        panel = QFrame()
-        panel.setStyleSheet(self.ortak_stil())
+        ana.addLayout(govde, 1)
+        sayfa.setLayout(ana)
+        return sayfa
+
+    def giris_sayfasi(self):
+        sayfa = QWidget()
+        ana = QVBoxLayout()
+        ana.setContentsMargins(36, 34, 36, 34)
+        ana.setSpacing(24)
+
+        ana.addLayout(self.sayfa_baslik(
+            "Giriş Doğrulama",
+            "Kullanıcı adı ve iki göz görseliyle doğrulama işlemini başlat."
+        ))
+
+        govde = QHBoxLayout()
+        govde.setSpacing(22)
+
+        form_card = self.kart("pageCard")
+        form = QVBoxLayout()
+        form.setContentsMargins(28, 28, 28, 28)
+        form.setSpacing(15)
+
+        form.addWidget(self.label("Kullanıcı Adı"))
+        self.giris_kullanici = QLineEdit()
+        self.giris_kullanici.setPlaceholderText("Kayıtlı kullanıcı adı")
+        form.addWidget(self.giris_kullanici)
+
+        self.giris_sag_goz_etiketi = self.resim_alani("Giriş sağ göz görseli bekleniyor")
+        self.giris_sol_goz_etiketi = self.resim_alani("Giriş sol göz görseli bekleniyor")
+
+        form.addWidget(self.giris_sag_goz_etiketi)
+        form.addWidget(self.buton("Sağ Göz Görseli Seç", self.giris_sag_goz_sec, "secondary"))
+
+        form.addWidget(self.giris_sol_goz_etiketi)
+        form.addWidget(self.buton("Sol Göz Görseli Seç", self.giris_sol_goz_sec, "secondary"))
+
+        form.addStretch()
+        form.addWidget(self.buton("Doğrulamayı Başlat", self.giris_dogrula, "success"))
+
+        form_card.setLayout(form)
+
+        sag_panel = QVBoxLayout()
+        sag_panel.setSpacing(18)
+
+        self.sonuc_kutusu = QLabel("SONUÇ BEKLENİYOR")
+        self.sonuc_kutusu.setObjectName("statusBox")
+        self.sonuc_kutusu.setAlignment(Qt.AlignCenter)
+        self.sonuc_kutusu.setMinimumHeight(95)
+
+        metric_card = self.kart("pageCard")
+        metric_layout = QGridLayout()
+        metric_layout.setContentsMargins(22, 22, 22, 22)
+        metric_layout.setSpacing(14)
+
+        metrik_adlari = [
+            ("Ortalama skor", "0.0000"),
+            ("Sağ skor", "0.0000"),
+            ("Sol skor", "0.0000"),
+            ("Çapraz skor", "0.0000"),
+            ("Skor farkı", "0.0000"),
+            ("Karar", "-")
+        ]
+
+        for i, (ad, deger) in enumerate(metrik_adlari):
+            self.metrikler[ad] = self.metrik_karti(ad, deger)
+            metric_layout.addWidget(self.metrikler[ad]["card"], i // 3, i % 3)
+
+        metric_card.setLayout(metric_layout)
+
+        log_card = self.log_karti("Doğrulama Günlüğü")
+        self.giris_log = log_card["log"]
+
+        sag_panel.addWidget(self.sonuc_kutusu)
+        sag_panel.addWidget(metric_card)
+        sag_panel.addWidget(log_card["card"], 1)
+
+        govde.addWidget(form_card, 1)
+        govde.addLayout(sag_panel, 1)
+
+        ana.addLayout(govde, 1)
+        sayfa.setLayout(ana)
+        return sayfa
+
+    def label(self, metin):
+        lbl = QLabel(metin)
+        lbl.setObjectName("fieldLabel")
+        return lbl
+
+    def resim_alani(self, metin):
+        lbl = QLabel(metin)
+        lbl.setObjectName("imageBox")
+        lbl.setAlignment(Qt.AlignCenter)
+        lbl.setMinimumHeight(150)
+        lbl.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        return lbl
+
+    def metrik_karti(self, baslik, deger):
+        frame = QFrame()
+        frame.setObjectName("metricCard")
 
         duzen = QVBoxLayout()
-        duzen.setContentsMargins(20, 20, 20, 20)
-        duzen.setSpacing(8)
+        duzen.setContentsMargins(16, 14, 16, 14)
+        duzen.setSpacing(4)
 
-        baslik = QLabel("Giriş Doğrulama")
-        baslik.setFont(QFont("Arial", 16, QFont.Bold))
-        baslik.setAlignment(Qt.AlignCenter)
+        title = QLabel(baslik)
+        title.setObjectName("metricTitle")
 
-        self.giris_kullanici = QLineEdit()
-        self.giris_kullanici.setPlaceholderText("Kullanıcı adı giriniz")
+        value = QLabel(deger)
+        value.setObjectName("metricValue")
 
-        self.giris_resim_etiketi = self.resim_alani_olustur("Giriş fotoğrafı seçilmedi")
+        duzen.addWidget(title)
+        duzen.addWidget(value)
 
-        btn_sec = QPushButton("Giriş İçin İris Fotoğrafı Seç")
-        btn_sec.clicked.connect(self.giris_resmi_sec)
+        frame.setLayout(duzen)
+        return {"card": frame, "value": value}
 
-        btn_dogrula = QPushButton("Giriş Doğrulamasını Yap")
-        btn_dogrula.clicked.connect(self.giris_dogrula)
+    def log_karti(self, baslik):
+        frame = self.kart("pageCard")
 
-        self.sonuc_kutusu = QLabel()
-        self.sonuc_kutusu.setAlignment(Qt.AlignCenter)
-        self.sonuc_kutusu.setMinimumHeight(76)
-        self.sonuc_kutusu.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        duzen = QVBoxLayout()
+        duzen.setContentsMargins(24, 24, 24, 24)
+        duzen.setSpacing(12)
 
-        self.detay_baslik = QLabel("Detaylar")
-        self.detay_baslik.setFont(QFont("Arial", 11, QFont.Bold))
-        self.detay_baslik.setStyleSheet("color: #cbd5e1; padding: 4px 2px 2px 2px; background: transparent;")
+        title = QLabel(baslik)
+        title.setObjectName("sectionTitle")
 
-        self.detay_benzerlik = self.bilgi_satiri_olustur("Benzerlik: -")
-        self.detay_mesafe = self.bilgi_satiri_olustur("Mesafe: -")
-        self.detay_en_iyi_skor = self.bilgi_satiri_olustur("En iyi skor: -")
-        self.detay_agirlikli_skor = self.bilgi_satiri_olustur("Ağırlıklı skor: -")
-        self.detay_en_kotu_skor = self.bilgi_satiri_olustur("En kötü skor: -")
-        self.detay_agirlikli_mesafe = self.bilgi_satiri_olustur("Ağırlıklı mesafe: -")
-        self.detay_en_kotu_mesafe = self.bilgi_satiri_olustur("En kötü mesafe: -")
-        self.detay_skor_farki = self.bilgi_satiri_olustur("Skor farkı: -")
-        self.detay_esik = self.bilgi_satiri_olustur("Eşik: -")
-        self.detay_yorum = self.bilgi_satiri_olustur("Durum: Henüz doğrulama yapılmadı.")
-        self.detay_dosya1 = self.bilgi_satiri_olustur("İris bölgesi: -")
-        self.detay_dosya2 = self.bilgi_satiri_olustur("Polar görüntü: -")
-        self.detay_dosya3 = self.bilgi_satiri_olustur("Profil görseli: -")
+        log = QTextEdit()
+        log.setReadOnly(True)
 
-        self.giris_log = QTextEdit()
-        self.giris_log.setReadOnly(True)
-        self.giris_log.setMinimumHeight(120)
-        self.giris_log.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        self.giris_log.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        duzen.addWidget(title)
+        duzen.addWidget(log, 1)
 
-        self.sonuc_alani_sifirla()
+        frame.setLayout(duzen)
+        return {"card": frame, "log": log}
 
-        detay_icerik = QWidget()
-        detay_duzen = QVBoxLayout()
-        detay_duzen.setContentsMargins(0, 0, 0, 0)
-        detay_duzen.setSpacing(6)
-        detay_duzen.addWidget(self.detay_baslik)
-        detay_duzen.addWidget(self.detay_benzerlik)
-        detay_duzen.addWidget(self.detay_mesafe)
-        detay_duzen.addWidget(self.detay_en_iyi_skor)
-        detay_duzen.addWidget(self.detay_agirlikli_skor)
-        detay_duzen.addWidget(self.detay_en_kotu_skor)
-        detay_duzen.addWidget(self.detay_agirlikli_mesafe)
-        detay_duzen.addWidget(self.detay_en_kotu_mesafe)
-        detay_duzen.addWidget(self.detay_skor_farki)
-        detay_duzen.addWidget(self.detay_esik)
-        detay_duzen.addWidget(self.detay_yorum)
-        detay_duzen.addWidget(self.detay_dosya1)
-        detay_duzen.addWidget(self.detay_dosya2)
-        detay_duzen.addWidget(self.detay_dosya3)
-        detay_icerik.setLayout(detay_duzen)
+    def resim_sec(self, baslik, hedef_attr, etiket, log_fonksiyonu, beklenen_yon=None):
+        dosya_yolu, _ = QFileDialog.getOpenFileName(
+            self,
+            baslik,
+            "",
+            "Görüntüler (*.png *.jpg *.jpeg *.bmp)"
+        )
 
-        detay_scroll = QScrollArea()
-        detay_scroll.setWidgetResizable(True)
-        detay_scroll.setFrameShape(QFrame.NoFrame)
-        detay_scroll.setWidget(detay_icerik)
-        detay_scroll.setMinimumHeight(300)
-        detay_scroll.setStyleSheet("background: transparent;")
+        if not dosya_yolu:
+            return
 
-        dogrulama_baslik = QLabel("Doğrulama Günlüğü")
-        dogrulama_baslik.setStyleSheet("color: #cbd5e1; padding-top: 4px; background: transparent;")
+        if beklenen_yon is not None:
+            tahmin = self.iris_isleyici.goz_yonu_tahmin_et(dosya_yolu)
+            yon = tahmin["yon"]
+            guven = tahmin["guven"]
 
-        duzen.addWidget(baslik)
-        duzen.addWidget(QLabel("Kullanıcı Adı"))
-        duzen.addWidget(self.giris_kullanici)
-        duzen.addWidget(self.giris_resim_etiketi)
-        duzen.addWidget(btn_sec)
-        duzen.addWidget(btn_dogrula)
-        duzen.addWidget(self.sonuc_kutusu)
-        duzen.addWidget(detay_scroll, 1)
-        duzen.addWidget(dogrulama_baslik)
-        duzen.addWidget(self.giris_log, 1)
+            log_fonksiyonu(f"Göz yönü tahmini: {yon.upper()} | güven: {guven:.2f}")
 
-        panel.setLayout(duzen)
-        return panel
-    def sonuc_kalite_puani(self, sonuc):
+            if yon == "bilinmiyor":
+                log_fonksiyonu("Hata: Göz yönü modeli bulunamadı. Önce modeli eğitmelisin.")
+                return
+
+            if guven < 0.35:
+                log_fonksiyonu("Hata: Göz yönü tahmini düşük güvenli. Görsel kabul edilmedi.")
+                return
+
+            if yon != beklenen_yon:
+                log_fonksiyonu(
+                    f"Hata: Bu görsel {yon.upper()} göz gibi algılandı. "
+                    f"{beklenen_yon.upper()} göz alanına yüklenemez."
+                )
+                return
+
+        setattr(self, hedef_attr, dosya_yolu)
+        self.resim_goster(etiket, dosya_yolu)
+        log_fonksiyonu(f"Görsel seçildi: {dosya_yolu}")
+
+    def resim_goster(self, etiket, resim_yolu):
+        resim = cv2.imread(resim_yolu)
+        if resim is None:
+            return
+
+        resim = cv2.cvtColor(resim, cv2.COLOR_BGR2RGB)
+        h, w, c = resim.shape
+
+        q_resim = QImage(resim.data, w, h, c * w, QImage.Format_RGB888)
+        pixmap = QPixmap.fromImage(q_resim)
+
+        etiket.setPixmap(
+            pixmap.scaled(etiket.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
+        )
+
+    def log_yaz(self, alan, mesaj):
+        alan.append(mesaj)
+        alan.moveCursor(QTextCursor.End)
+        alan.ensureCursorVisible()
+
+    def kayit_log_yaz(self, mesaj):
+        self.log_yaz(self.kayit_log, mesaj)
+
+    def giris_log_yaz(self, mesaj):
+        self.log_yaz(self.giris_log, mesaj)
+
+    def kayit_sag_goz_sec(self):
+        self.resim_sec(
+            "Kayıt sağ göz görselini seç",
+            "kayit_sag_goz_yolu",
+            self.kayit_sag_goz_etiketi,
+            self.kayit_log_yaz,
+            beklenen_yon="sag"
+        )
+
+    def kayit_sol_goz_sec(self):
+        self.resim_sec(
+            "Kayıt sol göz görselini seç",
+            "kayit_sol_goz_yolu",
+            self.kayit_sol_goz_etiketi,
+            self.kayit_log_yaz,
+            beklenen_yon="sol"
+        )
+
+    def giris_sag_goz_sec(self):
+        self.resim_sec(
+            "Giriş sağ göz görselini seç",
+            "giris_sag_goz_yolu",
+            self.giris_sag_goz_etiketi,
+            self.giris_log_yaz,
+            beklenen_yon="sag"
+        )
+        self.sonuc_sifirla()
+
+    def giris_sol_goz_sec(self):
+        self.resim_sec(
+            "Giriş sol göz görselini seç",
+            "giris_sol_goz_yolu",
+            self.giris_sol_goz_etiketi,
+            self.giris_log_yaz,
+            beklenen_yon="sol"
+        )
+        self.sonuc_sifirla()
+
+    def sonuc_sifirla(self):
+        self.sonuc_kutusu.setText("SONUÇ BEKLENİYOR")
+        self.sonuc_kutusu.setStyleSheet("")
+
+        varsayilan = {
+            "Ortalama skor": "0.0000",
+            "Sağ skor": "0.0000",
+            "Sol skor": "0.0000",
+            "Çapraz skor": "0.0000",
+            "Skor farkı": "0.0000",
+            "Karar": "-"
+        }
+
+        for key, value in varsayilan.items():
+            if key in self.metrikler:
+                self.metrikler[key]["value"].setText(value)
+
+    def sonuc_guncelle(self, basarili, metrikler):
+        if basarili:
+            self.sonuc_kutusu.setText("✅ GİRİŞ BAŞARILI")
+            self.sonuc_kutusu.setStyleSheet("""
+                QLabel#statusBox {
+                    background-color: #052e16;
+                    color: #dcfce7;
+                    border: 1px solid #22c55e;
+                    border-radius: 22px;
+                    font-size: 24px;
+                    font-weight: 900;
+                    padding: 22px;
+                }
+            """)
+        else:
+            self.sonuc_kutusu.setText("❌ GİRİŞ REDDEDİLDİ")
+            self.sonuc_kutusu.setStyleSheet("""
+                QLabel#statusBox {
+                    background-color: #450a0a;
+                    color: #fee2e2;
+                    border: 1px solid #ef4444;
+                    border-radius: 22px;
+                    font-size: 24px;
+                    font-weight: 900;
+                    padding: 22px;
+                }
+            """)
+
+        for key, value in metrikler.items():
+            if key in self.metrikler:
+                self.metrikler[key]["value"].setText(value)
+
+    def iris_analiz_et(self, resim_yolu, log_fonksiyonu, ad):
+        log_fonksiyonu(f"{ad} iris profili çıkarılıyor...")
+        return self.iris_isleyici.iris_profili_cikar(resim_yolu)
+
+    def analiz_kaydet(self, sonuc, klasor, on_ek):
+        return self.iris_isleyici.profil_kaydet(sonuc, klasor, on_ek)
+
+    def kalite_puani(self, sonuc):
         iris_x, iris_y, iris_r = sonuc["iris"]
         pupil_x, pupil_y, pupil_r = sonuc["gozbebegi"]
 
         merkez_kayma = np.sqrt((iris_x - pupil_x) ** 2 + (iris_y - pupil_y) ** 2)
         merkez_orani = merkez_kayma / max(iris_r, 1)
-
         oran = pupil_r / max(iris_r, 1)
 
         puan = 100.0
@@ -486,93 +790,29 @@ class AnaPencere(QWidget):
 
         return max(0.0, min(100.0, puan))
 
-
-    def agirlikli_karar_metrikleri(self, skor1, skor2, mesafe1, mesafe2, kalite1, kalite2):
-        agirlik1 = max(0.20, kalite1 / 100.0)
-        agirlik2 = max(0.20, kalite2 / 100.0)
-
-        toplam = agirlik1 + agirlik2
-        agirlik1 /= toplam
-        agirlik2 /= toplam
-
-        agirlikli_skor = skor1 * agirlik1 + skor2 * agirlik2
-        agirlikli_mesafe = mesafe1 * agirlik1 + mesafe2 * agirlik2
-
-        return {
-            "agirlik1": agirlik1,
-            "agirlik2": agirlik2,
-            "agirlikli_skor": agirlikli_skor,
-            "agirlikli_mesafe": agirlikli_mesafe
-        }
-
-    def resim_goster(self, etiket, resim_yolu):
-        resim = cv2.imread(resim_yolu)
-        if resim is None:
-            return
-
-        resim = cv2.cvtColor(resim, cv2.COLOR_BGR2RGB)
-        yukseklik, genislik, kanal = resim.shape
-        satir_bayt = kanal * genislik
-
-        q_resim = QImage(
-            resim.data,
-            genislik,
-            yukseklik,
-            satir_bayt,
-            QImage.Format_RGB888
-        )
-
-        pixmap = QPixmap.fromImage(q_resim)
-        etiket.setPixmap(
-            pixmap.scaled(etiket.size(), Qt.KeepAspectRatio, Qt.SmoothTransformation)
-        )
-
-    def kayit_resim1_sec(self):
-        dosya_yolu, _ = QFileDialog.getOpenFileName(
-            self, "1. iris fotoğrafını seç", "", "Görüntüler (*.png *.jpg *.jpeg *.bmp)"
-        )
-        if dosya_yolu:
-            self.kayit_resim1_yolu = dosya_yolu
-            self.resim_goster(self.kayit_resim1_etiketi, dosya_yolu)
-            self.kayit_log_yaz(f"1. kayıt fotoğrafı seçildi: {dosya_yolu}")
-
-    def kayit_resim2_sec(self):
-        dosya_yolu, _ = QFileDialog.getOpenFileName(
-            self, "2. iris fotoğrafını seç", "", "Görüntüler (*.png *.jpg *.jpeg *.bmp)"
-        )
-        if dosya_yolu:
-            self.kayit_resim2_yolu = dosya_yolu
-            self.resim_goster(self.kayit_resim2_etiketi, dosya_yolu)
-            self.kayit_log_yaz(f"2. kayıt fotoğrafı seçildi: {dosya_yolu}")
-
-    def giris_resmi_sec(self):
-        dosya_yolu, _ = QFileDialog.getOpenFileName(
-            self, "Giriş iris fotoğrafını seç", "", "Görüntüler (*.png *.jpg *.jpeg *.bmp)"
-        )
-        if dosya_yolu:
-            self.giris_resim_yolu = dosya_yolu
-            self.resim_goster(self.giris_resim_etiketi, dosya_yolu)
-            self.log_yaz(f"Giriş fotoğrafı seçildi: {dosya_yolu}")
-            self.sonuc_alani_sifirla()
-
     def kullanici_kaydet(self):
         kullanici_adi = self.kayit_kullanici.text().strip()
 
         if not kullanici_adi:
-            self.kayit_log_yaz("Hata: Lütfen kullanıcı adı giriniz.")
+            self.kayit_log_yaz("Hata: Kullanıcı adı giriniz.")
             return
 
-        if not self.kayit_resim1_yolu or not self.kayit_resim2_yolu:
-            self.kayit_log_yaz("Hata: Lütfen 2 kayıt fotoğrafını da seçiniz.")
+        if not self.kayit_sag_goz_yolu or not self.kayit_sol_goz_yolu:
+            self.kayit_log_yaz("Hata: Sağ ve sol göz görsellerini seçiniz.")
             return
 
         try:
-            birlesik_sonuc = self.iris_isleyici.birlesik_profil_olustur(
-                self.kayit_resim1_yolu,
-                self.kayit_resim2_yolu
+            sag_sonuc = self.iris_analiz_et(
+                self.kayit_sag_goz_yolu,
+                self.kayit_log_yaz,
+                "Sağ göz"
             )
 
-            profil = birlesik_sonuc["profil"]
+            sol_sonuc = self.iris_analiz_et(
+                self.kayit_sol_goz_yolu,
+                self.kayit_log_yaz,
+                "Sol göz"
+            )
 
             kayit_klasoru = "veriler/kayitlar"
             analiz_klasoru = os.path.join("veriler", "analizler", kullanici_adi)
@@ -580,256 +820,219 @@ class AnaPencere(QWidget):
             os.makedirs(kayit_klasoru, exist_ok=True)
             os.makedirs(analiz_klasoru, exist_ok=True)
 
-            hedef1 = os.path.join(kayit_klasoru, f"{kullanici_adi}_kayit_1.png")
-            hedef2 = os.path.join(kayit_klasoru, f"{kullanici_adi}_kayit_2.png")
+            sag_hedef = os.path.join(kayit_klasoru, f"{kullanici_adi}_sag_goz.png")
+            sol_hedef = os.path.join(kayit_klasoru, f"{kullanici_adi}_sol_goz.png")
 
-            shutil.copy(self.kayit_resim1_yolu, hedef1)
-            shutil.copy(self.kayit_resim2_yolu, hedef2)
+            shutil.copy(self.kayit_sag_goz_yolu, sag_hedef)
+            shutil.copy(self.kayit_sol_goz_yolu, sol_hedef)
 
-            self.veritabani.kullanici_kaydet(kullanici_adi, profil, hedef1, hedef2)
-
-            kayit1_dosyalar = self.iris_isleyici.profil_kaydet(
-                birlesik_sonuc["sonuc1"], analiz_klasoru, "kayit_1"
+            self.veritabani.kullanici_kaydet(
+                kullanici_adi,
+                sag_sonuc["profil"],
+                sol_sonuc["profil"],
+                sag_hedef,
+                sol_hedef
             )
-            kayit2_dosyalar = self.iris_isleyici.profil_kaydet(
-                birlesik_sonuc["sonuc2"], analiz_klasoru, "kayit_2"
-            )
 
-            np.save(os.path.join(analiz_klasoru, "birlesik_profil.npy"), profil)
-            birlesik_gorsel = self.iris_isleyici.profil_gorseli_olustur(profil)
-            cv2.imwrite(os.path.join(analiz_klasoru, "birlesik_profil_gorsel.png"), birlesik_gorsel)
+            sag_dosyalar = self.analiz_kaydet(sag_sonuc, analiz_klasoru, "kayit_sag_goz")
+            sol_dosyalar = self.analiz_kaydet(sol_sonuc, analiz_klasoru, "kayit_sol_goz")
 
-            self.kayit_log_yaz("İris profili başarıyla oluşturuldu.")
-            self.kayit_log_yaz(f"Profil boyutu: {len(profil)}")
-            self.kayit_log_yaz(f"Kayıt 1 iris bölgesi: {kayit1_dosyalar['iris_yolu']}")
-            self.kayit_log_yaz(f"Kayıt 1 polar: {kayit1_dosyalar['polar_yolu']}")
-            self.kayit_log_yaz(f"Kayıt 2 iris bölgesi: {kayit2_dosyalar['iris_yolu']}")
-            self.kayit_log_yaz(f"Kayıt 2 polar: {kayit2_dosyalar['polar_yolu']}")
-            self.kayit_log_yaz(f"Birleşik profil klasörü: {analiz_klasoru}")
-            self.kayit_log_yaz("Kullanıcı kaydedildi.")
+            np.save(os.path.join(analiz_klasoru, "sag_goz_profil.npy"), sag_sonuc["profil"])
+            np.save(os.path.join(analiz_klasoru, "sol_goz_profil.npy"), sol_sonuc["profil"])
 
-            self.sonuc_alani_guncelle(
-                durum="bilgi",
-                baslik="KAYIT TAMAMLANDI",
-                esik_yazisi="-",
-                yorum="Kayıt başarılı. Şimdi giriş testine geçebilirsin."
-            )
+            self.kayit_log_yaz("Kayıt tamamlandı.")
+            self.kayit_log_yaz(f"Sağ iris çıktısı: {sag_dosyalar['iris_yolu']}")
+            self.kayit_log_yaz(f"Sol iris çıktısı: {sol_dosyalar['iris_yolu']}")
+            self.kayit_log_yaz(f"Analiz klasörü: {analiz_klasoru}")
 
         except Exception as hata:
             self.kayit_log_yaz(f"Kayıt hatası: {str(hata)}")
-            self.sonuc_alani_guncelle(
-                durum="basarisiz",
-                baslik="KAYIT HATASI",
-                esik_yazisi="-",
-                yorum=str(hata)
-            )
+
+    def goz_karsilastir(self, kayit_yolu, giris_yolu, goz_adi):
+        kayit_sonuc = self.iris_analiz_et(
+            kayit_yolu,
+            self.giris_log_yaz,
+            f"Kayıt {goz_adi}"
+        )
+
+        giris_sonuc = self.iris_analiz_et(
+            giris_yolu,
+            self.giris_log_yaz,
+            f"Giriş {goz_adi}"
+        )
+
+        karsilastirma = self.iris_isleyici.kaydirmali_karsilastir(
+            kayit_sonuc["polar"],
+            giris_sonuc["polar"]
+        )
+
+        return {
+            "kayit_sonuc": kayit_sonuc,
+            "giris_sonuc": giris_sonuc,
+            "skor": karsilastirma["genel_skor"],
+            "mesafe": karsilastirma["mesafe"],
+            "kosinus": karsilastirma["kosinus"],
+            "korelasyon": karsilastirma["korelasyon"],
+            "kaydirma": karsilastirma["en_iyi_kaydirma"],
+            "kalite": self.kalite_puani(giris_sonuc)
+        }
+
+    def karar_ver(self, sag, sol, capraz_sag, capraz_sol):
+        ortalama_skor = (sag["skor"] + sol["skor"]) / 2.0
+        ortalama_mesafe = (sag["mesafe"] + sol["mesafe"]) / 2.0
+        skor_farki = abs(sag["skor"] - sol["skor"])
+
+        capraz_en_yuksek = max(
+            capraz_sag["genel_skor"],
+            capraz_sol["genel_skor"]
+        )
+
+        dogru_en_dusuk = min(sag["skor"], sol["skor"])
+        capraz_supheli = capraz_en_yuksek >= dogru_en_dusuk - 0.03
+
+        karar = (
+            sag["skor"] >= 0.84 and
+            sol["skor"] >= 0.84 and
+            ortalama_skor >= 0.86 and
+            sag["mesafe"] <= 0.55 and
+            sol["mesafe"] <= 0.55 and
+            ortalama_mesafe <= 0.50 and
+            skor_farki <= 0.14 and
+            not capraz_supheli
+        )
+
+        return karar, {
+            "ortalama_skor": ortalama_skor,
+            "ortalama_mesafe": ortalama_mesafe,
+            "skor_farki": skor_farki,
+            "capraz_sag_skor": capraz_sag["genel_skor"],
+            "capraz_sol_skor": capraz_sol["genel_skor"],
+            "capraz_en_yuksek": capraz_en_yuksek,
+            "capraz_supheli": capraz_supheli
+        }
+
+    def rapor_yaz(self, klasor, kullanici_adi, sag, sol, karar, metrikler):
+        rapor_yolu = os.path.join(klasor, "sag_sol_giris_karsilastirma_raporu.txt")
+
+        with open(rapor_yolu, "w", encoding="utf-8") as dosya:
+            dosya.write("SAĞ-SOL GİRİŞ KARŞILAŞTIRMA RAPORU\n")
+            dosya.write("=" * 60 + "\n")
+            dosya.write(f"Kullanıcı: {kullanici_adi}\n\n")
+
+            for ad, veri in [("SAĞ GÖZ", sag), ("SOL GÖZ", sol)]:
+                dosya.write(f"{ad}\n")
+                dosya.write("-" * 30 + "\n")
+                dosya.write(f"Skor: {veri['skor']:.4f}\n")
+                dosya.write(f"Mesafe: {veri['mesafe']:.4f}\n")
+                dosya.write(f"Kosinüs: {veri['kosinus']:.4f}\n")
+                dosya.write(f"Korelasyon: {veri['korelasyon']:.4f}\n")
+                dosya.write(f"Kalite: {veri['kalite']:.2f}\n\n")
+
+            dosya.write("ÇAPRAZ KONTROL\n")
+            dosya.write("-" * 30 + "\n")
+            dosya.write(f"Çapraz sağ skor: {metrikler['capraz_sag_skor']:.4f}\n")
+            dosya.write(f"Çapraz sol skor: {metrikler['capraz_sol_skor']:.4f}\n")
+            dosya.write(f"Çapraz en yüksek: {metrikler['capraz_en_yuksek']:.4f}\n")
+            dosya.write(f"Çapraz şüpheli: {metrikler['capraz_supheli']}\n\n")
+
+            dosya.write("GENEL KARAR\n")
+            dosya.write("-" * 30 + "\n")
+            dosya.write(f"Ortalama skor: {metrikler['ortalama_skor']:.4f}\n")
+            dosya.write(f"Ortalama mesafe: {metrikler['ortalama_mesafe']:.4f}\n")
+            dosya.write(f"Skor farkı: {metrikler['skor_farki']:.4f}\n")
+            dosya.write(f"Karar: {'KABUL' if karar else 'RED'}\n")
+
+        return rapor_yolu
 
     def giris_dogrula(self):
         kullanici_adi = self.giris_kullanici.text().strip()
 
         if not kullanici_adi:
-            self.giris_log.append("Hata: Lütfen kullanıcı adı giriniz.")
+            self.giris_log_yaz("Hata: Kullanıcı adı giriniz.")
             return
 
-        if not self.giris_resim_yolu:
-            self.giris_log.append("Hata: Lütfen giriş fotoğrafı seçiniz.")
+        if not self.giris_sag_goz_yolu or not self.giris_sol_goz_yolu:
+            self.giris_log_yaz("Hata: Sağ ve sol giriş görsellerini seçiniz.")
             return
 
         kayit = self.veritabani.kullanici_getir(kullanici_adi)
+
         if kayit is None:
-            self.giris_log.append("Hata: Bu kullanıcı adına ait kayıt yok.")
-            self.sonuc_alani_guncelle(
-                durum="basarisiz",
-                baslik="KULLANICI BULUNAMADI",
-                esik_yazisi="-",
-                yorum="Girilen kullanıcı adına ait kayıt bulunamadı."
-            )
+            self.sonuc_kutusu.setText("❌ KULLANICI BULUNAMADI")
             return
 
         try:
             self.giris_log.clear()
-            self.giris_log.append("Giriş analizi başlatıldı...")
+            self.giris_log_yaz("Doğrulama başlatıldı...")
 
-            giris_sonuc = self.iris_isleyici.iris_profili_cikar(self.giris_resim_yolu)
-
-            kayit1_sonuc = self.iris_isleyici.iris_profili_cikar(kayit["gorsel1"])
-            kayit2_sonuc = self.iris_isleyici.iris_profili_cikar(kayit["gorsel2"])
-
-            skor1 = self.iris_isleyici.kaydirmali_karsilastir(
-                kayit1_sonuc["polar"],
-                giris_sonuc["polar"]
+            sag = self.goz_karsilastir(
+                kayit["sag_gorsel"],
+                self.giris_sag_goz_yolu,
+                "sağ göz"
             )
 
-            skor2 = self.iris_isleyici.kaydirmali_karsilastir(
-                kayit2_sonuc["polar"],
-                giris_sonuc["polar"]
+            sol = self.goz_karsilastir(
+                kayit["sol_gorsel"],
+                self.giris_sol_goz_yolu,
+                "sol göz"
             )
 
-            skor1_deger = skor1["genel_skor"]
-            skor2_deger = skor2["genel_skor"]
-
-            mesafe1 = skor1["mesafe"]
-            mesafe2 = skor2["mesafe"]
-
-            en_iyi_skor = max(skor1_deger, skor2_deger)
-            en_kotu_skor = min(skor1_deger, skor2_deger)
-
-            en_iyi_mesafe = min(mesafe1, mesafe2)
-            en_kotu_mesafe = max(mesafe1, mesafe2)
-
-            skor_farki = abs(skor1_deger - skor2_deger)
-
-            if skor1_deger >= skor2_deger:
-                kaydirma = skor1["en_iyi_kaydirma"]
-                en_iyi_kayit = "kayit_1"
-            else:
-                kaydirma = skor2["en_iyi_kaydirma"]
-                en_iyi_kayit = "kayit_2"
-
-            kalite1 = self.sonuc_kalite_puani(kayit1_sonuc)
-            kalite2 = self.sonuc_kalite_puani(kayit2_sonuc)
-
-            agirlikli = self.agirlikli_karar_metrikleri(
-                skor1_deger, skor2_deger,
-                mesafe1, mesafe2,
-                kalite1, kalite2
+            capraz_sag = self.iris_isleyici.kaydirmali_karsilastir(
+                sol["kayit_sonuc"]["polar"],
+                sag["giris_sonuc"]["polar"]
             )
 
-            agirlikli_skor = agirlikli["agirlikli_skor"]
-            agirlikli_mesafe = agirlikli["agirlikli_mesafe"]
-
-            # Aynı kişiyi daha stabil bulur ama başkasını da kolay geçirmez
-            karar = (
-                en_iyi_skor >= 0.87 and
-                agirlikli_skor >= 0.84 and
-                en_kotu_skor >= 0.76 and
-                agirlikli_mesafe <= 0.47 and
-                en_kotu_mesafe <= 0.55 and
-                skor_farki <= 0.11
+            capraz_sol = self.iris_isleyici.kaydirmali_karsilastir(
+                sag["kayit_sonuc"]["polar"],
+                sol["giris_sonuc"]["polar"]
             )
 
-            analiz_klasoru = os.path.join("veriler", "analizler", kullanici_adi, "son_giris")
+            karar, metrikler = self.karar_ver(sag, sol, capraz_sag, capraz_sol)
+
+            analiz_klasoru = os.path.join(
+                "veriler",
+                "analizler",
+                kullanici_adi,
+                "son_giris_sag_sol"
+            )
             os.makedirs(analiz_klasoru, exist_ok=True)
 
-            giris_dosyalar = self.iris_isleyici.profil_kaydet(
-                giris_sonuc, analiz_klasoru, "giris"
+            self.analiz_kaydet(sag["giris_sonuc"], analiz_klasoru, "giris_sag_goz")
+            self.analiz_kaydet(sol["giris_sonuc"], analiz_klasoru, "giris_sol_goz")
+            self.analiz_kaydet(sag["kayit_sonuc"], analiz_klasoru, "kayit_sag_goz")
+            self.analiz_kaydet(sol["kayit_sonuc"], analiz_klasoru, "kayit_sol_goz")
+
+            rapor_yolu = self.rapor_yaz(
+                analiz_klasoru,
+                kullanici_adi,
+                sag,
+                sol,
+                karar,
+                metrikler
             )
 
-            kayit1_dosyalar = self.iris_isleyici.profil_kaydet(
-                kayit1_sonuc, analiz_klasoru, "karsilastirma_kayit_1"
+            self.sonuc_guncelle(
+                karar,
+                {
+                    "Ortalama skor": f"{metrikler['ortalama_skor']:.4f}",
+                    "Sağ skor": f"{sag['skor']:.4f}",
+                    "Sol skor": f"{sol['skor']:.4f}",
+                    "Çapraz skor": f"{metrikler['capraz_en_yuksek']:.4f}",
+                    "Skor farkı": f"{metrikler['skor_farki']:.4f}",
+                    "Karar": "KABUL" if karar else "RED"
+                }
             )
-            kayit2_dosyalar = self.iris_isleyici.profil_kaydet(
-                kayit2_sonuc, analiz_klasoru, "karsilastirma_kayit_2"
-            )
 
-            en_iyi_kaymis_polar = np.roll(giris_sonuc["polar"], shift=kaydirma, axis=1)
-            kaymis_polar_yolu = os.path.join(analiz_klasoru, "giris_en_iyi_kaydirilmis_polar.png")
-            cv2.imwrite(kaymis_polar_yolu, en_iyi_kaymis_polar)
+            self.giris_log_yaz(f"Sağ skor: {sag['skor']:.4f}")
+            self.giris_log_yaz(f"Sol skor: {sol['skor']:.4f}")
+            self.giris_log_yaz(f"Ortalama skor: {metrikler['ortalama_skor']:.4f}")
+            self.giris_log_yaz(f"Çapraz sağ skor: {metrikler['capraz_sag_skor']:.4f}")
+            self.giris_log_yaz(f"Çapraz sol skor: {metrikler['capraz_sol_skor']:.4f}")
 
-            rapor_yolu = os.path.join(analiz_klasoru, "giris_karsilastirma_raporu.txt")
-            with open(rapor_yolu, "w", encoding="utf-8") as dosya:
-                dosya.write("GİRİŞ KARŞILAŞTIRMA RAPORU\n")
-                dosya.write("=" * 55 + "\n")
-                dosya.write(f"Kullanıcı: {kullanici_adi}\n")
-                dosya.write(f"Giriş fotoğrafı: {self.giris_resim_yolu}\n")
-                dosya.write(f"En iyi eşleşen kayıt: {en_iyi_kayit}\n")
-                dosya.write(f"Kayıt 1 skor: {skor1_deger:.4f}\n")
-                dosya.write(f"Kayıt 2 skor: {skor2_deger:.4f}\n")
-                dosya.write(f"Kayıt 1 mesafe: {mesafe1:.4f}\n")
-                dosya.write(f"Kayıt 2 mesafe: {mesafe2:.4f}\n")
-                dosya.write(f"Kayıt 1 kalite: {kalite1:.2f}\n")
-                dosya.write(f"Kayıt 2 kalite: {kalite2:.2f}\n")
-                dosya.write(f"Ağırlık 1: {agirlikli['agirlik1']:.4f}\n")
-                dosya.write(f"Ağırlık 2: {agirlikli['agirlik2']:.4f}\n")
-                dosya.write(f"Ağırlıklı skor: {agirlikli_skor:.4f}\n")
-                dosya.write(f"Ağırlıklı mesafe: {agirlikli_mesafe:.4f}\n")
-                dosya.write(f"En iyi skor: {en_iyi_skor:.4f}\n")
-                dosya.write(f"En kötü skor: {en_kotu_skor:.4f}\n")
-                dosya.write(f"En kötü mesafe: {en_kotu_mesafe:.4f}\n")
-                dosya.write(f"Skor farkı: {skor_farki:.4f}\n")
-                dosya.write(f"En iyi kaydırma: {kaydirma}\n")
-                dosya.write(f"Karar: {'KABUL' if karar else 'RED'}\n")
+            if metrikler["capraz_supheli"]:
+                self.giris_log_yaz("Uyarı: Sağ-sol göz karışmış olabilir. Çapraz eşleşme şüpheli.")
 
-            self.giris_log.append(f"Kayıt 1 skor: {skor1_deger:.4f}")
-            self.giris_log.append(f"Kayıt 2 skor: {skor2_deger:.4f}")
-            self.giris_log.append(f"Kayıt 1 mesafe: {mesafe1:.4f}")
-            self.giris_log.append(f"Kayıt 2 mesafe: {mesafe2:.4f}")
-            self.giris_log.append(f"Kayıt 1 kalite: {kalite1:.2f}")
-            self.giris_log.append(f"Kayıt 2 kalite: {kalite2:.2f}")
-            self.giris_log.append(f"Ağırlık 1: {agirlikli['agirlik1']:.4f}")
-            self.giris_log.append(f"Ağırlık 2: {agirlikli['agirlik2']:.4f}")
-            self.giris_log.append(f"Ağırlıklı skor: {agirlikli_skor:.4f}")
-            self.giris_log.append(f"Ağırlıklı mesafe: {agirlikli_mesafe:.4f}")
-            self.giris_log.append(f"En iyi skor: {en_iyi_skor:.4f}")
-            self.giris_log.append(f"En kötü skor: {en_kotu_skor:.4f}")
-            self.giris_log.append(f"En kötü mesafe: {en_kotu_mesafe:.4f}")
-            self.giris_log.append(f"Skor farkı: {skor_farki:.4f}")
-            self.giris_log.append(f"En iyi kaydırma: {kaydirma}")
-            self.giris_log.append(
-                "Kural: en iyi >= 0.87 | ağırlıklı >= 0.84 | en kötü >= 0.76 | "
-                "ağırlıklı mesafe <= 0.47 | en kötü mesafe <= 0.55 | fark <= 0.11"
-            )
-            self.giris_log.append(f"Giriş iris bölgesi: {giris_dosyalar['iris_yolu']}")
-            self.giris_log.append(f"Giriş polar: {giris_dosyalar['polar_yolu']}")
-            self.giris_log.append(f"Kayıt 1 iris bölgesi: {kayit1_dosyalar['iris_yolu']}")
-            self.giris_log.append(f"Kayıt 2 iris bölgesi: {kayit2_dosyalar['iris_yolu']}")
-            self.giris_log.append(f"Kaydırılmış polar: {kaymis_polar_yolu}")
-            self.giris_log.append(f"Karşılaştırma raporu: {rapor_yolu}")
-
-            if karar:
-                yorum = (
-                    f"Giriş kabul edildi. En iyi eşleşme {en_iyi_kayit}. "
-                    f"Ağırlıklı değerlendirme aynı kişiyi yeterince tutarlı buldu."
-                )
-                self.giris_log.append("Sonuç: GİRİŞ BAŞARILI")
-
-                self.sonuc_alani_guncelle(
-                    durum="basarili",
-                    baslik="GİRİŞ BAŞARILI",
-                    benzerlik=agirlikli_skor,
-                    mesafe=agirlikli_mesafe,
-                    esik_yazisi="en iyi >= 0.87 | ağırlıklı >= 0.84 | en kötü >= 0.76 | ağırlıklı mesafe <= 0.47 | en kötü mesafe <= 0.55 | fark <= 0.11",
-                    yorum=yorum,
-                    iris_yolu=giris_dosyalar["iris_yolu"],
-                    polar_yolu=giris_dosyalar["polar_yolu"],
-                    profil_yolu=giris_dosyalar["profil_png_yolu"],
-                    en_iyi_skor=en_iyi_skor,
-                    agirlikli_skor=agirlikli_skor,
-                    en_kotu_skor=en_kotu_skor,
-                    agirlikli_mesafe=agirlikli_mesafe,
-                    en_kotu_mesafe=en_kotu_mesafe,
-                    skor_farki=skor_farki
-                )
-            else:
-                yorum = (
-                    "Doğrulama reddedildi. En iyi eşleşme tek başına yeterli olsa bile "
-                    "iki kayıtla genel tutarlılık yeterli bulunmadı."
-                )
-                self.giris_log.append("Sonuç: GİRİŞ REDDEDİLDİ")
-
-                self.sonuc_alani_guncelle(
-                    durum="basarisiz",
-                    baslik="GİRİŞ REDDEDİLDİ",
-                    benzerlik=agirlikli_skor,
-                    mesafe=agirlikli_mesafe,
-                    esik_yazisi="en iyi >= 0.87 | ağırlıklı >= 0.84 | en kötü >= 0.76 | ağırlıklı mesafe <= 0.47 | en kötü mesafe <= 0.55 | fark <= 0.11",
-                    yorum=yorum,
-                    iris_yolu=giris_dosyalar["iris_yolu"],
-                    polar_yolu=giris_dosyalar["polar_yolu"],
-                    profil_yolu=giris_dosyalar["profil_png_yolu"],
-                    en_iyi_skor=en_iyi_skor,
-                    agirlikli_skor=agirlikli_skor,
-                    en_kotu_skor=en_kotu_skor,
-                    agirlikli_mesafe=agirlikli_mesafe,
-                    en_kotu_mesafe=en_kotu_mesafe,
-                    skor_farki=skor_farki
-                )
+            self.giris_log_yaz(f"Rapor: {rapor_yolu}")
 
         except Exception as hata:
-            self.giris_log.append(f"Doğrulama hatası: {str(hata)}")
-            self.sonuc_alani_guncelle(
-                durum="basarisiz",
-                baslik="DOĞRULAMA HATASI",
-                esik_yazisi="-",
-                yorum=str(hata)
-            )
+            self.giris_log_yaz(f"Doğrulama hatası: {str(hata)}")

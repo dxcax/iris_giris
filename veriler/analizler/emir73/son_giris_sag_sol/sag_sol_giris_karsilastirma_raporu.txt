@@ -1,0 +1,33 @@
+SAĞ-SOL GİRİŞ KARŞILAŞTIRMA RAPORU
+============================================================
+Kullanıcı: emir73
+
+SAĞ GÖZ
+------------------------------
+Skor: 0.7204
+Mesafe: 0.5590
+Kosinüs: 0.8437
+Korelasyon: 0.5355
+Kalite: 100.00
+
+SOL GÖZ
+------------------------------
+Skor: 0.8575
+Mesafe: 0.4351
+Kosinüs: 0.9052
+Korelasyon: 0.7858
+Kalite: 100.00
+
+ÇAPRAZ KONTROL
+------------------------------
+Çapraz sağ skor: 0.8422
+Çapraz sol skor: 0.7257
+Çapraz en yüksek: 0.8422
+Çapraz şüpheli: True
+
+GENEL KARAR
+------------------------------
+Ortalama skor: 0.7889
+Ortalama mesafe: 0.4971
+Skor farkı: 0.1371
+Karar: RED
