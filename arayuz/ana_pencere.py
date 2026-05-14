@@ -19,7 +19,7 @@ class AnaPencere(QWidget):
     def __init__(self):
         super().__init__()
 
-        self.setWindowTitle("IrisGuard | Sağ-Sol İris Doğrulama")
+        self.setWindowTitle("IrisGuard | ResNet18 Sağ-Sol İris Doğrulama")
         self.setMinimumSize(1450, 900)
         self.showMaximized()
 
@@ -353,7 +353,7 @@ class AnaPencere(QWidget):
 
         ana.addLayout(self.sayfa_baslik(
             "Dashboard",
-            "İris tabanlı kayıt, sağ-sol göz kontrolü ve giriş doğrulama işlemlerini buradan yönetebilirsin."
+            "Segmentation, polar normalization, ResNet18 embedding ve sağ-sol göz kontrollü doğrulama paneli."
         ))
 
         grid = QGridLayout()
@@ -361,14 +361,14 @@ class AnaPencere(QWidget):
 
         kart1 = self.dashboard_karti(
             "Kullanıcı Kaydı",
-            "Sağ ve sol göz görselleri model ile kontrol edilir, sonra iris profili oluşturulur.",
+            "Sağ/sol göz yönü kontrol edilir; iris segmentasyonu sonrası ResNet18 embedding profili oluşturulur.",
             "Kayda Git",
             lambda: self.sayfa_degistir(1)
         )
 
         kart2 = self.dashboard_karti(
             "Giriş Doğrulama",
-            "Kayıtlı kullanıcı çift göz doğrulaması ve çapraz kontrol ile test edilir.",
+            "Kayıtlı kullanıcı ResNet18 embedding, cosine similarity ve çapraz göz kontrolüyle test edilir.",
             "Doğrulamaya Git",
             lambda: self.sayfa_degistir(2)
         )
@@ -534,6 +534,8 @@ class AnaPencere(QWidget):
             ("Sol skor", "0.0000"),
             ("Çapraz skor", "0.0000"),
             ("Skor farkı", "0.0000"),
+            ("Kalite", "0.00"),
+            ("Ortalama mesafe", "0.0000"),
             ("Karar", "-")
         ]
 
@@ -720,6 +722,8 @@ class AnaPencere(QWidget):
             "Sol skor": "0.0000",
             "Çapraz skor": "0.0000",
             "Skor farkı": "0.0000",
+            "Kalite": "0.00",
+            "Ortalama mesafe": "0.0000",
             "Karar": "-"
         }
 
@@ -760,7 +764,7 @@ class AnaPencere(QWidget):
                 self.metrikler[key]["value"].setText(value)
 
     def iris_analiz_et(self, resim_yolu, log_fonksiyonu, ad):
-        log_fonksiyonu(f"{ad} iris profili çıkarılıyor...")
+        log_fonksiyonu(f"{ad}: segmentation → polar normalize → ResNet18 embedding çıkarılıyor...")
         return self.iris_isleyici.iris_profili_cikar(resim_yolu)
 
     def analiz_kaydet(self, sonuc, klasor, on_ek):
@@ -882,33 +886,117 @@ class AnaPencere(QWidget):
         ortalama_mesafe = (sag["mesafe"] + sol["mesafe"]) / 2.0
         skor_farki = abs(sag["skor"] - sol["skor"])
 
-        capraz_en_yuksek = max(
-            capraz_sag["genel_skor"],
-            capraz_sol["genel_skor"]
+        capraz_sag_skor = capraz_sag["genel_skor"]
+        capraz_sol_skor = capraz_sol["genel_skor"]
+        capraz_en_yuksek = max(capraz_sag_skor, capraz_sol_skor)
+
+        sag_kalite = sag["kalite"]
+        sol_kalite = sol["kalite"]
+        ortalama_kalite = (sag_kalite + sol_kalite) / 2.0
+
+        capraz_margin = 0.04
+        capraz_supheli = (
+            capraz_sag_skor > sag["skor"] + capraz_margin and
+            capraz_sol_skor > sol["skor"] + capraz_margin
         )
 
-        dogru_en_dusuk = min(sag["skor"], sol["skor"])
-        capraz_supheli = capraz_en_yuksek >= dogru_en_dusuk - 0.03
+        kalite_cok_kotu = (
+            sag_kalite < 45 or
+            sol_kalite < 45 or
+            ortalama_kalite < 50
+        )
+
+        orta_kalite = (
+            not kalite_cok_kotu and
+            (
+                sag_kalite < 65 or
+                sol_kalite < 65 or
+                ortalama_kalite < 65
+            )
+        )
+
+        if orta_kalite:
+            min_goz_skoru = 0.84
+            min_ortalama_skor = 0.86
+            max_goz_mesafe = 0.50
+            max_ortalama_mesafe = 0.46
+            max_skor_farki = 0.14
+        else:
+            min_goz_skoru = 0.80
+            min_ortalama_skor = 0.84
+            max_goz_mesafe = 0.55
+            max_ortalama_mesafe = 0.52
+            max_skor_farki = 0.16
 
         karar = (
-            sag["skor"] >= 0.84 and
-            sol["skor"] >= 0.84 and
-            ortalama_skor >= 0.86 and
-            sag["mesafe"] <= 0.55 and
-            sol["mesafe"] <= 0.55 and
-            ortalama_mesafe <= 0.50 and
-            skor_farki <= 0.14 and
-            not capraz_supheli
+            sag["skor"] >= min_goz_skoru and
+            sol["skor"] >= min_goz_skoru and
+            ortalama_skor >= min_ortalama_skor and
+            sag["mesafe"] <= max_goz_mesafe and
+            sol["mesafe"] <= max_goz_mesafe and
+            ortalama_mesafe <= max_ortalama_mesafe and
+            skor_farki <= max_skor_farki and
+            not capraz_supheli and
+            not kalite_cok_kotu
         )
+
+        red_nedenleri = []
+
+        if sag["skor"] < min_goz_skoru:
+            red_nedenleri.append(
+                f"Sağ göz skoru düşük: {sag['skor']:.4f} < {min_goz_skoru:.2f}"
+            )
+
+        if sol["skor"] < min_goz_skoru:
+            red_nedenleri.append(
+                f"Sol göz skoru düşük: {sol['skor']:.4f} < {min_goz_skoru:.2f}"
+            )
+
+        if ortalama_skor < min_ortalama_skor:
+            red_nedenleri.append(
+                f"Ortalama skor düşük: {ortalama_skor:.4f} < {min_ortalama_skor:.2f}"
+            )
+
+        if sag["mesafe"] > max_goz_mesafe:
+            red_nedenleri.append(
+                f"Sağ göz mesafesi yüksek: {sag['mesafe']:.4f} > {max_goz_mesafe:.2f}"
+            )
+
+        if sol["mesafe"] > max_goz_mesafe:
+            red_nedenleri.append(
+                f"Sol göz mesafesi yüksek: {sol['mesafe']:.4f} > {max_goz_mesafe:.2f}"
+            )
+
+        if ortalama_mesafe > max_ortalama_mesafe:
+            red_nedenleri.append(
+                f"Ortalama mesafe yüksek: {ortalama_mesafe:.4f} > {max_ortalama_mesafe:.2f}"
+            )
+
+        if skor_farki > max_skor_farki:
+            red_nedenleri.append(
+                f"Sağ-sol skor farkı yüksek: {skor_farki:.4f} > {max_skor_farki:.2f}"
+            )
+
+        if capraz_supheli:
+            red_nedenleri.append("Çapraz kontrol şüpheli: sağ-sol göz karışmış olabilir.")
+
+        if kalite_cok_kotu:
+            red_nedenleri.append("Görüntü kalitesi çok düşük.")
 
         return karar, {
             "ortalama_skor": ortalama_skor,
             "ortalama_mesafe": ortalama_mesafe,
             "skor_farki": skor_farki,
-            "capraz_sag_skor": capraz_sag["genel_skor"],
-            "capraz_sol_skor": capraz_sol["genel_skor"],
+            "capraz_sag_skor": capraz_sag_skor,
+            "capraz_sol_skor": capraz_sol_skor,
             "capraz_en_yuksek": capraz_en_yuksek,
-            "capraz_supheli": capraz_supheli
+            "capraz_supheli": capraz_supheli,
+            "sag_kalite": sag_kalite,
+            "sol_kalite": sol_kalite,
+            "ortalama_kalite": ortalama_kalite,
+            "kalite_cok_kotu": kalite_cok_kotu,
+            "orta_kalite": orta_kalite,
+            "red_nedenleri": red_nedenleri
         }
 
     def rapor_yaz(self, klasor, kullanici_adi, sag, sol, karar, metrikler):
@@ -940,7 +1028,18 @@ class AnaPencere(QWidget):
             dosya.write(f"Ortalama skor: {metrikler['ortalama_skor']:.4f}\n")
             dosya.write(f"Ortalama mesafe: {metrikler['ortalama_mesafe']:.4f}\n")
             dosya.write(f"Skor farkı: {metrikler['skor_farki']:.4f}\n")
+            dosya.write(f"Sağ kalite: {metrikler.get('sag_kalite', 0):.2f}\n")
+            dosya.write(f"Sol kalite: {metrikler.get('sol_kalite', 0):.2f}\n")
+            dosya.write(f"Ortalama kalite: {metrikler.get('ortalama_kalite', 0):.2f}\n")
+            dosya.write(f"Orta kalite modu: {metrikler.get('orta_kalite', False)}\n")
+            dosya.write(f"Kalite çok kötü: {metrikler.get('kalite_cok_kotu', False)}\n")
             dosya.write(f"Karar: {'KABUL' if karar else 'RED'}\n")
+
+            if metrikler.get("red_nedenleri"):
+                dosya.write("\nRED NEDENLERİ\n")
+                dosya.write("-" * 30 + "\n")
+                for neden in metrikler["red_nedenleri"]:
+                    dosya.write(f"- {neden}\n")
 
         return rapor_yolu
 
@@ -1019,6 +1118,8 @@ class AnaPencere(QWidget):
                     "Sol skor": f"{sol['skor']:.4f}",
                     "Çapraz skor": f"{metrikler['capraz_en_yuksek']:.4f}",
                     "Skor farkı": f"{metrikler['skor_farki']:.4f}",
+                    "Kalite": f"{metrikler['ortalama_kalite']:.2f}",
+                    "Ortalama mesafe": f"{metrikler['ortalama_mesafe']:.4f}",
                     "Karar": "KABUL" if karar else "RED"
                 }
             )
@@ -1029,8 +1130,22 @@ class AnaPencere(QWidget):
             self.giris_log_yaz(f"Çapraz sağ skor: {metrikler['capraz_sag_skor']:.4f}")
             self.giris_log_yaz(f"Çapraz sol skor: {metrikler['capraz_sol_skor']:.4f}")
 
+            self.giris_log_yaz(f"Sağ kalite: {metrikler['sag_kalite']:.2f}")
+            self.giris_log_yaz(f"Sol kalite: {metrikler['sol_kalite']:.2f}")
+            self.giris_log_yaz(f"Ortalama kalite: {metrikler['ortalama_kalite']:.2f}")
+
+            if metrikler["kalite_cok_kotu"]:
+                self.giris_log_yaz("Uyarı: Görüntü kalitesi çok düşük. İris bölgesi güvenilir değil.")
+
+            if metrikler["orta_kalite"]:
+                self.giris_log_yaz("Bilgi: Görüntü orta kalite. Eşikler biraz sıkılaştırıldı.")
+
             if metrikler["capraz_supheli"]:
                 self.giris_log_yaz("Uyarı: Sağ-sol göz karışmış olabilir. Çapraz eşleşme şüpheli.")
+
+            if not karar:
+                for neden in metrikler["red_nedenleri"]:
+                    self.giris_log_yaz(f"Red nedeni: {neden}")
 
             self.giris_log_yaz(f"Rapor: {rapor_yolu}")
 

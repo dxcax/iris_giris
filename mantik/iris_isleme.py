@@ -4,10 +4,28 @@ import joblib
 import numpy as np
 from skimage.feature import local_binary_pattern, hog
 
+try:
+    import torch
+    import torch.nn as nn
+    from torchvision import models, transforms
+    from PIL import Image
+    TORCH_KULLANILABILIR = True
+except Exception:
+    torch = None
+    nn = None
+    models = None
+    transforms = None
+    Image = None
+    TORCH_KULLANILABILIR = False
+
 
 class IrisIsleyici:
     def __init__(self):
-        pass
+        self._resnet_model = None
+        self._resnet_device = None
+        self._resnet_transform = None
+        self._son_profil_tipi = "bilinmiyor"
+        self._son_profil_hata = ""
 
     def resmi_yukle(self, resim_yolu):
         gri = cv2.imread(resim_yolu, cv2.IMREAD_GRAYSCALE)
@@ -92,6 +110,56 @@ class IrisIsleyici:
             "guven": guven,
             "mesaj": "Tahmin başarılı."
         }
+
+    def resnet_modeli_hazirla(self):
+        """
+        ResNet18 modelini tek sefer yükler.
+        PyTorch / torchvision yoksa klasik profile otomatik düşmek için hata üretir.
+        """
+        if not TORCH_KULLANILABILIR:
+            raise RuntimeError("PyTorch / torchvision kurulu değil.")
+
+        if self._resnet_model is not None:
+            return self._resnet_model
+
+        self._resnet_device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+        try:
+            agirliklar = models.ResNet18_Weights.DEFAULT
+            model = models.resnet18(weights=agirliklar)
+            self._resnet_transform = agirliklar.transforms()
+        except Exception as hata:
+            # Önemli: weights=None rastgele ağırlık demektir ve biyometrik skorları bozar.
+            # Pretrained ağırlık yüklenemezse klasik Gabor+LBP+Gradient profile düşüyoruz.
+            raise RuntimeError(f"ResNet18 pretrained ağırlıkları yüklenemedi: {hata}")
+
+        model.fc = nn.Identity()
+        model.eval()
+        model.to(self._resnet_device)
+
+        self._resnet_model = model
+        return self._resnet_model
+
+    def resnet_embedding_cikar(self, polar):
+        """
+        Polar normalize edilmiş iris görüntüsünden 512 boyutlu ResNet18 embedding çıkarır.
+        """
+        model = self.resnet_modeli_hazirla()
+
+        polar_u8 = polar.astype(np.uint8)
+        rgb = cv2.cvtColor(polar_u8, cv2.COLOR_GRAY2RGB)
+        pil_goruntu = Image.fromarray(rgb)
+
+        girdi = self._resnet_transform(pil_goruntu).unsqueeze(0).to(self._resnet_device)
+
+        with torch.no_grad():
+            embedding = model(girdi).detach().cpu().numpy().flatten().astype(np.float32)
+
+        norm = np.linalg.norm(embedding)
+        if norm <= 1e-8:
+            raise ValueError("ResNet18 embedding üretilemedi.")
+
+        return embedding / norm
 
     def gozbebegi_bul(self, gri):
         h, w = gri.shape
@@ -426,7 +494,7 @@ class IrisIsleyici:
 
         return np.concatenate(ozellikler).astype(np.float32)
 
-    def profil_vektoru_olustur(self, polar):
+    def klasik_profil_vektoru_olustur(self, polar):
         lbp = self.lbp_ozellikleri(polar)
         gradyan = self.gradyan_ozellikleri(polar)
         gabor = self.gabor_ozellik_cikar(polar)
@@ -442,6 +510,23 @@ class IrisIsleyici:
         ]).astype(np.float32)
 
         return self.normalize_vektor(profil)
+
+    def profil_vektoru_olustur(self, polar):
+        """
+        Ana profil çıkarma fonksiyonu.
+        Önce ResNet18 embedding denenir.
+        ResNet/PyTorch/ağırlık tarafında sorun olursa mevcut klasik Gabor+LBP+Gradient sisteme düşer.
+        Böylece projedeki eski çalışan yapı bozulmaz.
+        """
+        try:
+            profil = self.resnet_embedding_cikar(polar)
+            self._son_profil_tipi = "ResNet18 embedding"
+            self._son_profil_hata = ""
+            return profil
+        except Exception as hata:
+            self._son_profil_tipi = "Klasik fallback (Gabor+LBP+Gradient)"
+            self._son_profil_hata = str(hata)
+            return self.klasik_profil_vektoru_olustur(polar)
 
     def iris_profili_cikar(self, resim_yolu):
         gri = self.resmi_yukle(resim_yolu)
@@ -475,7 +560,9 @@ class IrisIsleyici:
             "cizimli": cizimli,
             "iris": iris,
             "gozbebegi": gozbebegi,
-            "konum_bilgisi": konum_bilgisi
+            "konum_bilgisi": konum_bilgisi,
+            "profil_tipi": self._son_profil_tipi,
+            "profil_hata": self._son_profil_hata
         }
 
     def profil_kaydet(self, sonuc, hedef_klasor, dosya_adi_on_eki):
@@ -485,17 +572,68 @@ class IrisIsleyici:
         polar_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_polar.png")
         maske_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_maske.png")
         cizimli_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_cemberler.png")
+
         profil_npy_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_profil.npy")
         profil_png_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_profil_gorsel.png")
+
+        resnet_npy_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_resnet_embedding.npy")
+        resnet_png_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_resnet_embedding_gorsel.png")
+        resnet_input_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_resnet_input.png")
+        resnet_rapor_yolu = os.path.join(hedef_klasor, f"{dosya_adi_on_eki}_resnet_rapor.txt")
 
         cv2.imwrite(iris_yolu, sonuc["iris_bolgesi"])
         cv2.imwrite(polar_yolu, sonuc["polar"])
         cv2.imwrite(maske_yolu, sonuc["maske"])
         cv2.imwrite(cizimli_yolu, sonuc["cizimli"])
+
         np.save(profil_npy_yolu, sonuc["profil"])
 
         profil_gorseli = self.profil_gorseli_olustur(sonuc["profil"])
         cv2.imwrite(profil_png_yolu, profil_gorseli)
+
+        # ResNet aktifse profil zaten ResNet embedding olabilir.
+        # Bu yüzden ayrıca daha anlaşılır isimlerle kaydediyoruz.
+        np.save(resnet_npy_yolu, sonuc["profil"])
+        cv2.imwrite(resnet_png_yolu, profil_gorseli)
+
+        # ResNet'e giren görüntüyü de görünür kaydet.
+        resnet_input = cv2.resize(sonuc["polar"], (224, 224))
+        cv2.imwrite(resnet_input_yolu, resnet_input)
+
+        profil = sonuc["profil"]
+
+        with open(resnet_rapor_yolu, "w", encoding="utf-8") as dosya:
+            dosya.write("RESNET18 EMBEDDING RAPORU\n")
+            dosya.write("=" * 50 + "\n")
+            dosya.write(f"Dosya ön eki: {dosya_adi_on_eki}\n")
+            dosya.write(f"Profil tipi: {sonuc.get('profil_tipi', 'bilinmiyor')}\n")
+            if sonuc.get('profil_hata'):
+                dosya.write(f"Fallback nedeni: {sonuc.get('profil_hata')}\n")
+            dosya.write("Pipeline: Segmentation -> Polar Normalize -> ResNet18 Embedding/Klasik Fallback -> Cosine Similarity\n\n")
+
+            dosya.write("KAYDEDİLEN DOSYALAR\n")
+            dosya.write("-" * 50 + "\n")
+            dosya.write(f"İris bölgesi: {iris_yolu}\n")
+            dosya.write(f"Polar normalize görüntü: {polar_yolu}\n")
+            dosya.write(f"Maske: {maske_yolu}\n")
+            dosya.write(f"Çemberli analiz: {cizimli_yolu}\n")
+            dosya.write(f"ResNet input görüntüsü: {resnet_input_yolu}\n")
+            dosya.write(f"ResNet embedding numpy: {resnet_npy_yolu}\n")
+            dosya.write(f"ResNet embedding görseli: {resnet_png_yolu}\n\n")
+
+            dosya.write("EMBEDDING İSTATİSTİKLERİ\n")
+            dosya.write("-" * 50 + "\n")
+            dosya.write(f"Embedding boyutu: {profil.shape}\n")
+            dosya.write(f"Norm: {np.linalg.norm(profil):.6f}\n")
+            dosya.write(f"Minimum değer: {np.min(profil):.6f}\n")
+            dosya.write(f"Maksimum değer: {np.max(profil):.6f}\n")
+            dosya.write(f"Ortalama: {np.mean(profil):.6f}\n")
+            dosya.write(f"Standart sapma: {np.std(profil):.6f}\n\n")
+
+            dosya.write("İLK 20 EMBEDDING DEĞERİ\n")
+            dosya.write("-" * 50 + "\n")
+            for i, deger in enumerate(profil[:20]):
+                dosya.write(f"{i:03d}: {deger:.6f}\n")
 
         return {
             "iris_yolu": iris_yolu,
@@ -503,7 +641,11 @@ class IrisIsleyici:
             "maske_yolu": maske_yolu,
             "cizimli_yolu": cizimli_yolu,
             "profil_npy_yolu": profil_npy_yolu,
-            "profil_png_yolu": profil_png_yolu
+            "profil_png_yolu": profil_png_yolu,
+            "resnet_npy_yolu": resnet_npy_yolu,
+            "resnet_png_yolu": resnet_png_yolu,
+            "resnet_input_yolu": resnet_input_yolu,
+            "resnet_rapor_yolu": resnet_rapor_yolu
         }
 
     def polar_korelasyon(self, polar1, polar2):

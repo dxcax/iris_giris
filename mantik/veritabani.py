@@ -13,8 +13,12 @@ class VeriTabani:
             self._yaz({})
 
     def _oku(self):
-        with open(self.dosya_yolu, "r", encoding="utf-8") as dosya:
-            return json.load(dosya)
+        try:
+            with open(self.dosya_yolu, "r", encoding="utf-8") as dosya:
+                return json.load(dosya)
+        except (json.JSONDecodeError, FileNotFoundError):
+            self._yaz({})
+            return {}
 
     def _yaz(self, veri):
         with open(self.dosya_yolu, "w", encoding="utf-8") as dosya:
@@ -49,12 +53,17 @@ class VeriTabani:
 
         kayit = veriler[kullanici_adi]
 
-        return {
-            "sag_iris_profili": self.metni_vektore_cevir(kayit["sag_iris_profili"]),
-            "sol_iris_profili": self.metni_vektore_cevir(kayit["sol_iris_profili"]),
-            "sag_gorsel": kayit["sag_gorsel"],
-            "sol_gorsel": kayit["sol_gorsel"]
-        }
+        if "sag_iris_profili" in kayit and "sol_iris_profili" in kayit:
+            return {
+                "sag_iris_profili": self.metni_vektore_cevir(kayit["sag_iris_profili"]),
+                "sol_iris_profili": self.metni_vektore_cevir(kayit["sol_iris_profili"]),
+                "sag_gorsel": kayit["sag_gorsel"],
+                "sol_gorsel": kayit["sol_gorsel"]
+            }
+
+        # Eski tek-profil kayıtları görürse program patlamasın diye None döndür.
+        # Sağ-sol sistemde kullanıcıyı yeniden kaydetmek gerekir.
+        return None
 
     def kullanici_var_mi(self, kullanici_adi):
         return kullanici_adi in self._oku()
