@@ -1,0 +1,245 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+.poster{width:100%;font-family:var(--font-sans);background:#07111f;border-radius:16px;overflow:hidden;padding-bottom:28px}
+.header{padding:24px 28px 18px;display:flex;align-items:center;gap:18px;border-bottom:1px solid #1a2f4a}
+.iris-logo svg{width:60px;height:60px;flex-shrink:0}
+.htxt h1{font-size:26px;font-weight:600;color:#f1f5f9;letter-spacing:-.4px}
+.htxt p{font-size:12px;color:#475569;margin-top:2px}
+.tags{display:flex;gap:5px;flex-wrap:wrap;margin-top:8px}
+.tag{background:#0c1a2e;border:1px solid #1e3a5f;color:#64748b;font-size:9px;padding:2px 8px;border-radius:20px;font-weight:500;letter-spacing:.3px}
+.tag.hi{background:#0c1f3e;border-color:#1d4ed8;color:#60a5fa}
+.body{padding:18px 28px 0}
+.lbl{font-size:9px;font-weight:600;color:#334155;letter-spacing:1.8px;text-transform:uppercase;margin-bottom:9px}
+.pipe{display:flex;align-items:center;gap:0;margin-bottom:20px}
+.ps{display:flex;flex-direction:column;align-items:center;flex:1;min-width:0}
+.pi{width:48px;height:48px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:5px;border:1px solid;flex-shrink:0}
+.pl{font-size:8.5px;color:#64748b;text-align:center;line-height:1.3;font-weight:500}
+.pa{color:#1e3a5f;font-size:14px;flex-shrink:0;margin-bottom:20px;padding:0 1px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.c{background:#0b1929;border:1px solid #1a2f4a;border-radius:10px;padding:12px 14px}
+.ct{font-size:10px;font-weight:600;margin-bottom:7px;display:flex;align-items:center;gap:5px}
+.cb{font-size:10px;color:#64748b;line-height:1.65}
+.cb b{color:#94a3b8;font-weight:500}
+.met{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.mv{background:#0b1929;border:1px solid #1a2f4a;border-radius:8px;padding:10px;text-align:center}
+.mvn{font-size:18px;font-weight:600;color:#38bdf8;line-height:1}
+.mvl{font-size:8px;color:#334155;margin-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.dr{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.da{background:#040f09;border:1px solid #14532d;border-radius:10px;padding:11px 13px}
+.dd{background:#0f0505;border:1px solid #450a0a;border-radius:10px;padding:11px 13px}
+.dtl{font-size:10px;font-weight:600;margin-bottom:6px}
+.da .dtl{color:#4ade80}
+.dd .dtl{color:#f87171}
+.di{font-size:9.5px;color:#64748b;line-height:1.75;display:flex;align-items:baseline;gap:4px}
+.da .dot{color:#4ade80}
+.dd .dot{color:#ef4444}
+.ft{padding:10px 28px 0;display:flex;justify-content:space-between;border-top:1px solid #1a2f4a;margin-top:4px}
+.ft span{font-size:9px;color:#1e3a5f}
+</style>
+
+<div class="poster">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="iris-logo">
+      <svg viewBox="0 0 60 60" fill="none"><circle cx="30" cy="30" r="28" stroke="#1e3a5f" stroke-width="1.2"/><circle cx="30" cy="30" r="20" stroke="#38bdf8" stroke-width="1.5"/><circle cx="30" cy="30" r="12" stroke="#818cf8" stroke-width="1.2"/><circle cx="30" cy="30" r="6" fill="#07111f" stroke="#334155" stroke-width="1"/><circle cx="30" cy="30" r="2.5" fill="#1e40af"/>
+      <line x1="30" y1="2" x2="30" y2="58" stroke="#1a2f4a" stroke-width=".5"/><line x1="2" y1="30" x2="58" y2="30" stroke="#1a2f4a" stroke-width=".5"/><line x1="10" y1="10" x2="50" y2="50" stroke="#1a2f4a" stroke-width=".5"/><line x1="50" y1="10" x2="10" y2="50" stroke="#1a2f4a" stroke-width=".5"/>
+      </svg>
+    </div>
+    <div class="htxt">
+      <h1>IrisGuard</h1>
+      <p>Biyometrik İris Tanıma &amp; Kimlik Doğrulama Sistemi</p>
+      <div class="tags">
+        <span class="tag hi">Python 3</span><span class="tag hi">OpenCV</span><span class="tag hi">PyTorch / ResNet18</span><span class="tag hi">scikit-learn</span><span class="tag hi">PyQt5</span>
+        <span class="tag">HOG + LinearSVC</span><span class="tag">Gabor · LBP · Gradyan</span><span class="tag">JSON + base64</span><span class="tag">CASIA-Iris-Thousand</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- PIPELINE -->
+    <div class="lbl" style="margin-top:16px">İşleme Pipeline'ı — 8 Adım</div>
+    <div class="pipe">
+      <div class="ps"><div class="pi" style="background:#0a1a2e;border-color:#1e3a5f"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="4" width="20" height="14" rx="3" stroke="#64748b" stroke-width="1.5"/><circle cx="12" cy="11" r="3.5" stroke="#38bdf8" stroke-width="1.5"/><circle cx="12" cy="11" r="1.5" fill="#1e40af"/></svg></div><div class="pl">Ham<br/>Görüntü</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#100a20;border-color:#5b21b6"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="3" stroke="#a78bfa" stroke-width="1.5"/><path d="M6 12h12M12 6v12" stroke="#5b21b6" stroke-width="1" stroke-dasharray="2 2"/><path d="M4 4l3 3M20 4l-3 3M4 20l3-3M20 20l-3-3" stroke="#818cf8" stroke-width="1" stroke-linecap="round"/></svg></div><div class="pl">Ön<br/>İşleme</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#1a0808;border-color:#7f1d1d"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#f87171" stroke-width="1.5"/><circle cx="12" cy="12" r="4.5" stroke="#ef4444" stroke-width="1.5"/><circle cx="12" cy="12" r="1.5" fill="#7f1d1d"/></svg></div><div class="pl">Pupil<br/>Tespiti</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#061510;border-color:#166534"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#4ade80" stroke-width="1.5"/><circle cx="12" cy="12" r="5" stroke="#22c55e" stroke-width="1"/><circle cx="12" cy="12" r="2" fill="#052e16"/></svg></div><div class="pl">İris<br/>Segm.</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#0b1530;border-color:#1d4ed8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="8" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="3 2"/><rect x="4" y="17" width="16" height="4" rx="1.5" fill="#1e40af" opacity=".7"/><path d="M4 17 Q12 3 20 17" stroke="#3b82f6" stroke-width="1.2" fill="none"/></svg></div><div class="pl">Polar<br/>Normal.</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#0f0820;border-color:#6d28d9"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="2" y="7" width="20" height="10" rx="2" stroke="#8b5cf6" stroke-width="1.5"/><path d="M6 12h2M10 10v4M14 11v2M18 9v6" stroke="#a78bfa" stroke-width="1.5" stroke-linecap="round"/></svg></div><div class="pl">ResNet18<br/>Embed.</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#071810;border-color:#065f46"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="8" cy="12" r="4.5" stroke="#34d399" stroke-width="1.5"/><circle cx="16" cy="12" r="4.5" stroke="#10b981" stroke-width="1.5"/><path d="M11 10.5 Q12 12 13 10.5M11 13.5 Q12 12 13 13.5" stroke="#6ee7b7" stroke-width=".8" fill="none"/></svg></div><div class="pl">Karşı-<br/>laştırma</div></div>
+      <div class="pa">›</div>
+      <div class="ps"><div class="pi" style="background:#061810;border-color:#1d4ed8"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3L3 8v8l9 5 9-5V8L12 3Z" stroke="#60a5fa" stroke-width="1.5"/><path d="M8.5 11.5l3 3 5-5" stroke="#4ade80" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="pl">Karar</div></div>
+    </div>
+
+    <!-- EYE DIAGRAM + POLAR NORM -->
+    <div class="g2">
+      <div class="c">
+        <div class="ct" style="color:#60a5fa"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="5.5" cy="5.5" r="4.5" stroke="#60a5fa" stroke-width="1"/><circle cx="5.5" cy="5.5" r="2.5" stroke="#818cf8" stroke-width="1"/></svg>İris Segmentasyonu</div>
+        <svg viewBox="0 0 250 130" width="100%" style="border-radius:7px;background:#04090f;display:block">
+          <defs><radialGradient id="ig" cx="50%" cy="50%" r="50%"><stop offset="0%" stop-color="#1e1b4b"/><stop offset="45%" stop-color="#1e3a5f"/><stop offset="75%" stop-color="#0f2040"/><stop offset="100%" stop-color="#04090f"/></radialGradient></defs>
+          <path d="M28 65 Q82 8 125 12 Q168 8 222 65 Q168 122 125 118 Q82 122 28 65Z" fill="#080f1c" stroke="#1e3a5f" stroke-width="1"/>
+          <circle cx="125" cy="65" r="36" fill="url(#ig)" stroke="#38bdf8" stroke-width="1.5"/>
+          <circle cx="125" cy="65" r="36" fill="none" stroke="#1e40af" stroke-width=".5" stroke-dasharray="2 4"/>
+          <line x1="97" y1="39" x2="111" y2="53" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="125" y1="29" x2="125" y2="47" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="153" y1="39" x2="139" y2="53" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="161" y1="65" x2="143" y2="65" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="153" y1="91" x2="139" y2="77" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="125" y1="101" x2="125" y2="83" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="97" y1="91" x2="111" y2="77" stroke="#1a2f4a" stroke-width=".5"/>
+          <line x1="89" y1="65" x2="107" y2="65" stroke="#1a2f4a" stroke-width=".5"/>
+          <circle cx="125" cy="65" r="17" fill="#020608" stroke="#f87171" stroke-width="1.2"/>
+          <circle cx="125" cy="65" r="36" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/>
+          <circle cx="125" cy="65" r="17" fill="none" stroke="#f87171" stroke-width="1.2" stroke-dasharray="3 3" opacity=".8"/>
+          <line x1="161" y1="65" x2="218" y2="44" stroke="#38bdf8" stroke-width=".5" opacity=".5"/>
+          <text x="220" y="42" font-size="8" fill="#38bdf8" font-family="sans-serif">İris</text>
+          <line x1="142" y1="65" x2="218" y2="76" stroke="#f87171" stroke-width=".5" opacity=".5"/>
+          <text x="220" y="79" font-size="8" fill="#f87171" font-family="sans-serif">Pupil</text>
+          <rect x="3" y="3" width="86" height="14" rx="3" fill="#0c1829" stroke="#1e3a5f" stroke-width=".5"/>
+          <text x="46" y="12" font-size="7.5" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">cv2.HoughCircles</text>
+          <text x="125" y="125" font-size="7.5" fill="#334155" text-anchor="middle" font-family="sans-serif">Sobel kenar skoru · halka kontrast · skor optimizasyonu</text>
+        </svg>
+        <div class="cb" style="margin-top:7px"><b>Pupil:</b> Hough + parlaklık filtresi &nbsp;·&nbsp; <b>İris:</b> 240 açıda gradyan örnekleme, dikey kirpik cezası</div>
+      </div>
+      <div class="c">
+        <div class="ct" style="color:#818cf8"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 9 C1 5 5.5 1 10 1" stroke="#818cf8" stroke-width="1.2" stroke-linecap="round"/><rect x="1" y="7" width="9" height="3" rx="1" stroke="#60a5fa" stroke-width=".8"/></svg>Polar Normalizasyon (Daugman)</div>
+        <svg viewBox="0 0 250 130" width="100%" style="border-radius:7px;background:#04090f;display:block">
+          <defs><marker id="ab" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M1 1L5 3L1 5" fill="none" stroke="#38bdf8" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></marker></defs>
+          <circle cx="58" cy="65" r="40" fill="#06101c" stroke="#1e3a5f" stroke-width=".8"/>
+          <circle cx="58" cy="65" r="40" fill="none" stroke="#22c55e" stroke-width="1.5"/>
+          <circle cx="58" cy="65" r="25" fill="#050e1a" stroke="#2563eb" stroke-width="1"/>
+          <circle cx="58" cy="65" r="11" fill="#020608" stroke="#334155" stroke-width=".8"/>
+          <line x1="58" y1="25" x2="58" y2="40" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="85" y1="38" x2="76" y2="48" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="98" y1="65" x2="83" y2="65" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="85" y1="92" x2="76" y2="82" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="58" y1="105" x2="58" y2="90" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="31" y1="92" x2="40" y2="82" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="18" y1="65" x2="33" y2="65" stroke="#1e3a5f" stroke-width=".5"/>
+          <line x1="31" y1="38" x2="40" y2="48" stroke="#1e3a5f" stroke-width=".5"/>
+          <text x="58" y="122" text-anchor="middle" font-size="8" fill="#334155" font-family="sans-serif">Dairesel</text>
+          <path d="M110 65 L132 65" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" marker-end="url(#ab)"/>
+          <text x="121" y="61" font-size="7" fill="#60a5fa" text-anchor="middle" font-family="sans-serif">θ,r</text>
+          <rect x="140" y="38" width="102" height="54" rx="4" fill="#060f1e" stroke="#2563eb" stroke-width="1.5"/>
+          <rect x="140" y="38" width="102" height="11" rx="2" fill="#0a2040" opacity=".8"/>
+          <rect x="140" y="49" width="102" height="10" fill="#0d2848" opacity=".7"/>
+          <rect x="140" y="59" width="102" height="10" fill="#102e58" opacity=".7"/>
+          <rect x="140" y="69" width="102" height="11" fill="#0d2848" opacity=".6"/>
+          <rect x="140" y="80" width="102" height="12" rx="2" fill="#081830" opacity=".7"/>
+          <line x1="158" y1="38" x2="156" y2="92" stroke="#1e40af" stroke-width=".5" opacity=".5"/>
+          <line x1="176" y1="38" x2="180" y2="92" stroke="#1e40af" stroke-width=".5" opacity=".5"/>
+          <line x1="200" y1="38" x2="196" y2="92" stroke="#1e40af" stroke-width=".5" opacity=".5"/>
+          <line x1="222" y1="38" x2="224" y2="92" stroke="#1e40af" stroke-width=".5" opacity=".5"/>
+          <text x="191" y="122" text-anchor="middle" font-size="8" fill="#334155" font-family="sans-serif">Polar (512×64 px)</text>
+          <text x="140" y="34" font-size="7" fill="#60a5fa" font-family="sans-serif">r=0</text>
+          <text x="228" y="34" font-size="7" fill="#60a5fa" font-family="sans-serif">r=max</text>
+          <text x="140" y="108" font-size="7" fill="#334155" font-family="sans-serif">θ=0</text>
+          <text x="220" y="108" font-size="7" fill="#334155" font-family="sans-serif">θ=2π</text>
+        </svg>
+        <div class="cb" style="margin-top:7px"><b>x(r,θ)</b> = (1−r)·x_pupil + r·x_iris &nbsp;→&nbsp; equalizeHist + GaussianBlur son adım</div>
+      </div>
+    </div>
+
+    <!-- 3 KART: Özellik · Göz Yönü · Karşılaştırma -->
+    <div class="g3">
+      <div class="c">
+        <div class="ct" style="color:#c084fc"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="3" width="9" height="5" rx="1.5" stroke="#c084fc" stroke-width="1"/><path d="M3 5.5h1.5M5.5 5v1.5M8 4.5v2" stroke="#a855f7" stroke-width="1" stroke-linecap="round"/></svg>Özellik Çıkarma</div>
+        <div style="background:#04090f;border-radius:7px;padding:9px;margin-bottom:6px">
+          <div style="font-size:9.5px;color:#818cf8;font-weight:600;margin-bottom:3px">Birincil — ResNet18</div>
+          <div style="font-size:9px;color:#475569;line-height:1.65">Polar → RGB → pretrained<br/>ResNet18 fc = <span style="color:#a78bfa">Identity()</span><br/>→ <b style="color:#c084fc">512-dim</b> vektör<br/>L2 normaliz. (birim küre)</div>
+        </div>
+        <div style="background:#04090f;border-radius:7px;padding:9px">
+          <div style="font-size:9.5px;color:#fb923c;font-weight:600;margin-bottom:3px">Yedek — Klasik Fallback</div>
+          <div style="font-size:9px;color:#475569;line-height:1.65"><span style="color:#fbbf24">Gabor 65%</span> 3f×4yön<br/><span style="color:#60a5fa">LBP 25%</span> uniform hist.<br/><span style="color:#94a3b8">Gradyan 10%</span> Sobel XY</div>
+        </div>
+      </div>
+      <div class="c">
+        <div class="ct" style="color:#fb923c"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><path d="M1 4h3v3H1zM7 2h3v3H7zM3.5 6.5h4v2.5h-4z" stroke="#fb923c" stroke-width=".9"/></svg>Göz Yönü Tespiti</div>
+        <div class="cb" style="margin-bottom:8px">
+          CASIA-Iris-Thousand<br/>
+          <b>HOG</b> özellik çıkarma<br/>
+          9 yön · 8×8 hücre · 2×2 blok<br/>
+          + 8 istatistiksel özellik<br/>
+          <b>LinearSVC</b> → sağ / sol
+        </div>
+        <div style="background:#04090f;border-radius:7px;padding:9px">
+          <div style="font-size:8px;color:#334155;margin-bottom:3px">Regex etiket (dosya adı)</div>
+          <div style="font-family:var(--font-mono);font-size:9px;color:#fb923c;line-height:1.7">R\d+ → sağ göz<br/>L\d+ → sol göz</div>
+          <div style="font-size:8px;color:#334155;margin-top:4px">Model: veriler/goz_yonu_model.pkl</div>
+        </div>
+      </div>
+      <div class="c">
+        <div class="ct" style="color:#34d399"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><circle cx="3.5" cy="5.5" r="2.8" stroke="#34d399" stroke-width=".9"/><circle cx="7.5" cy="5.5" r="2.8" stroke="#10b981" stroke-width=".9"/></svg>Karşılaştırma</div>
+        <div class="cb" style="margin-bottom:8px">
+          <b>Kosinüs</b> × 0.60<br/>
+          <b>Pearson</b> × 0.40<br/>
+          Kaydırma ±20 px (41 deneme)<br/>
+          Rotasyon toleransı sağlar
+        </div>
+        <div style="background:#04090f;border-radius:7px;padding:9px;font-family:var(--font-mono);font-size:9px;line-height:1.8;color:#34d399">
+          skor =<br/>
+          0.60 × cos(v₁,v₂)<br/>
+          + 0.40 × corr_max
+        </div>
+      </div>
+    </div>
+
+    <!-- METRİKLER -->
+    <div class="met">
+      <div class="mv"><div class="mvn">512</div><div class="mvl">Embed. boyutu</div></div>
+      <div class="mv"><div class="mvn">41</div><div class="mvl">Kaydırma denem.</div></div>
+      <div class="mv"><div class="mvn">64×512</div><div class="mvl">Polar görüntü</div></div>
+      <div class="mv"><div class="mvn">2× Göz</div><div class="mvl">Çift doğrulama</div></div>
+    </div>
+
+    <!-- KARAR MEKANİZMASI -->
+    <div class="lbl">Karar Mekanizması — Adaptif Eşikler</div>
+    <div class="dr">
+      <div class="da">
+        <div class="dtl">✓ KABUL — hepsi sağlanmalı</div>
+        <div class="di"><span class="dot">●</span>Sağ göz skoru ≥ eşik (0.72–0.80)</div>
+        <div class="di"><span class="dot">●</span>Sol göz skoru ≥ eşik (0.72–0.80)</div>
+        <div class="di"><span class="dot">●</span>Ortalama skor ≥ 0.76–0.84 (adaptif)</div>
+        <div class="di"><span class="dot">●</span>Sağ-sol fark ≤ 0.14–0.16</div>
+        <div class="di"><span class="dot">●</span>Çapraz skor şüpheli değil</div>
+        <div class="di"><span class="dot">●</span>L2 mesafesi ≤ üst sınır</div>
+      </div>
+      <div class="dd">
+        <div class="dtl">✗ RED — herhangi biri yeterliyse</div>
+        <div class="di"><span class="dot">●</span>Herhangi bir göz eşiğin altında</div>
+        <div class="di"><span class="dot">●</span>Çapraz skor &gt; düz skor (göz karışıklığı)</div>
+        <div class="di"><span class="dot">●</span>Görüntü kalitesi kritik eşiğin altı</div>
+        <div class="di"><span class="dot">●</span>L2 mesafesi üst sınırı aşıyor</div>
+        <div class="di"><span class="dot">●</span>Kullanıcı sistemde kayıtlı değil</div>
+        <div class="di"><span class="dot">●</span>Segmentasyon başarısız</div>
+      </div>
+    </div>
+
+    <!-- ALT İKİ KART -->
+    <div class="g2">
+      <div class="c">
+        <div class="ct" style="color:#38bdf8"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><ellipse cx="5.5" cy="3.5" rx="4.5" ry="1.8" stroke="#38bdf8" stroke-width=".9"/><path d="M1 3.5v4c0 1 2 1.8 4.5 1.8S10 8.5 10 7.5v-4" stroke="#38bdf8" stroke-width=".9"/></svg>Veritabanı (veritabani.py)</div>
+        <div class="cb"><b>JSON + base64</b> — kurulum yok, taşınabilir<br/>np.float32 → base64 string → JSON<br/>Sağ iris + sol iris profili ayrı saklanır<br/>Görsel yolu da kayıt altına alınır</div>
+      </div>
+      <div class="c">
+        <div class="ct" style="color:#818cf8"><svg width="11" height="11" viewBox="0 0 11 11" fill="none"><rect x="1" y="2" width="9" height="7" rx="2" stroke="#818cf8" stroke-width=".9"/><rect x="2.5" y="4.5" width="2" height="2" rx=".5" fill="#6366f1"/><rect x="6.5" y="4.5" width="2" height="2" rx=".5" fill="#6366f1"/></svg>Arayüz (ana_pencere.py)</div>
+        <div class="cb"><b>PyQt5</b> · QStackedWidget çok sayfalı yapı<br/>Kayıt (enrollment) + Doğrulama (verification)<br/>QStyleSheet dark tema · Canlı log<br/>Metrik kartları · Skor ekranı</div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="ft">
+    <span>Biyometri ve Kimliklendirme Dersi — Proje Sunumu</span>
+    <span>IrisGuard · Python · OpenCV · PyTorch · PyQt5</span>
+  </div>
+</div>

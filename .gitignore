@@ -179,3 +179,33 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+
+# Sanal ortam
+iris_env/
+
+# Veri setleri
+CASIA-Iris-Thousand/
+ornek_veriseti/
+
+# Analiz çıktıları
+veriler/analizler/
+
+# Model dosyalari (istersen)
+*.pth
+*.pt
+
+# Numpy ciktilari
+*.npy
+
+# Geçici görseller
+*_embedding_gorsel.png
+*_profil_gorsel.png
+*_iris_bolgesi.png
+*_polar.png
+*_maske.png
+*_cemberler.png
+
+# Windows
+Thumbs.db
+desktop.ini

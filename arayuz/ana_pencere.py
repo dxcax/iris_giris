@@ -923,7 +923,7 @@ class AnaPencere(QWidget):
             max_skor_farki = 0.14
         else:
             min_goz_skoru = 0.80
-            min_ortalama_skor = 0.84
+            min_ortalama_skor = 0.81
             max_goz_mesafe = 0.55
             max_ortalama_mesafe = 0.52
             max_skor_farki = 0.16
