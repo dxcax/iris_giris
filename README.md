@@ -122,3 +122,6 @@ Sonuç Ekranı
 Adli Bilişim Mühendisliği
 
 Fırat Üniversitesi
+
+<img width="1917" height="1142" alt="image" src="https://github.com/user-attachments/assets/88ef31fc-6ef5-44f6-a8d3-e74a5a8548fe" />
+
