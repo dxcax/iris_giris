@@ -1,39 +1,124 @@
-# IrisGuard - İris Tabanlı Biyometrik Kimlik Doğrulama Sistemi
+# 👁️ IrisGuard
 
-IrisGuard, iris biyometrisini kullanarak kimlik doğrulama gerçekleştiren yapay zekâ destekli bir biyometrik doğrulama sistemidir. Projede, derin öğrenme ve görüntü işleme teknikleri bir araya getirilerek güvenilir ve yüksek doğruluk oranına sahip bir iris tanıma altyapısı geliştirilmiştir.
+### Yapay Zekâ Destekli İris Biyometrik Kimlik Doğrulama Sistemi
 
-## Proje Özellikleri
+![Python](https://img.shields.io/badge/Python-3.11-blue?style=for-the-badge\&logo=python)
+![PyTorch](https://img.shields.io/badge/PyTorch-Deep%20Learning-red?style=for-the-badge\&logo=pytorch)
+![OpenCV](https://img.shields.io/badge/OpenCV-Computer%20Vision-green?style=for-the-badge\&logo=opencv)
+![Streamlit](https://img.shields.io/badge/Streamlit-Web%20UI-ff4b4b?style=for-the-badge\&logo=streamlit)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)
 
-* ResNet18 modeli ile iris görüntülerinden öznitelik çıkarımı
-* Sağ ve sol gözün otomatik olarak tespit edilmesi
-* İris görüntülerinin kalite analizinin yapılması
-* Cosine Similarity yöntemi ile biyometrik eşleştirme
-* Kullanıcı dostu Streamlit arayüzü
-* Modüler ve geliştirilebilir proje yapısı
+---
 
-## Kullanılan Teknolojiler
+## 📖 Proje Hakkında
 
-* Python
-* PyTorch
-* OpenCV
-* NumPy
-* Scikit-learn
-* Streamlit
+IrisGuard, iris biyometrisini kullanarak kimlik doğrulama gerçekleştiren yapay zekâ destekli bir bilgisayarlı görü projesidir.
 
-## Veri Seti
+Sistem, iris görüntülerinden derin öğrenme modeli yardımıyla öznitelikler çıkarır ve bu öznitelikleri karşılaştırarak aynı kişiye ait olup olmadığını belirler.
 
-Projede **CASIA-Iris-Thousand** veri seti kullanılmıştır. Veri seti yaklaşık **20.000 iris görüntüsü** ve **1.000 farklı kişiye** ait sağ ve sol göz örneklerinden oluşmaktadır.
+Projede görüntü işleme, makine öğrenmesi ve biyometrik doğrulama teknikleri birlikte kullanılmıştır.
 
-## Çalışma Akışı
+---
 
-1. İris görüntüsünün sisteme yüklenmesi
-2. Görüntünün ön işleme adımlarından geçirilmesi
-3. Sağ veya sol göz bilgisinin belirlenmesi
-4. ResNet18 modeli ile öznitelik vektörünün oluşturulması
-5. Cosine Similarity kullanılarak benzerlik skorunun hesaplanması
-6. Kimlik doğrulama kararının verilmesi
-7. Sonuçların Streamlit arayüzü üzerinden kullanıcıya sunulması
+## 🚀 Özellikler
 
-## Projenin Amacı
+* ResNet18 ile öznitelik çıkarımı
+* Sağ / Sol göz tespiti
+* İris kalite analizi
+* Cosine Similarity ile biyometrik karşılaştırma
+* Streamlit tabanlı modern arayüz
+* Modüler proje yapısı
 
-Bu projenin amacı, iris biyometrisini kullanarak güvenilir ve yüksek doğrulukta çalışan bir kimlik doğrulama sistemi geliştirmektir. Derin öğrenme tabanlı öznitelik çıkarımı ile biyometrik eşleştirme yöntemlerini bir araya getirerek eğitim ve araştırma amaçlı kullanılabilecek modern bir iris tanıma sistemi ortaya koymaktadır.
+---
+
+## 🛠 Kullanılan Teknolojiler
+
+| Teknoloji    | Amaç                |
+| ------------ | ------------------- |
+| Python       | Uygulama geliştirme |
+| PyTorch      | Derin öğrenme       |
+| OpenCV       | Görüntü işleme      |
+| NumPy        | Sayısal işlemler    |
+| Scikit-Learn | Makine öğrenmesi    |
+| Streamlit    | Web arayüzü         |
+
+---
+
+## 📂 Veri Seti
+
+**CASIA-Iris-Thousand**
+
+* Yaklaşık 20.000 iris görüntüsü
+* 1.000 farklı kişi
+* Sağ ve sol göz görüntüleri
+* Biyometrik doğrulama için hazırlanmış veri seti
+
+---
+
+## ⚙️ Sistem Mimarisi
+
+İris Görüntüsü
+
+⬇
+
+Ön İşleme
+
+⬇
+
+Sağ / Sol Göz Tespiti
+
+⬇
+
+ResNet18 ile Öznitelik Çıkarımı
+
+⬇
+
+Cosine Similarity
+
+⬇
+
+Kimlik Doğrulama
+
+⬇
+
+Sonuç Ekranı
+
+---
+
+## 📸 Ekran Görüntüleri
+
+### Ana Arayüz
+
+`docs/main.png`
+
+---
+
+### Kimlik Doğrulama Sonucu
+
+`docs/result.png`
+
+---
+
+### Sağ / Sol Göz Analizi
+
+`docs/right_left.png`
+
+---
+
+## 📈 Kullanım Alanları
+
+* Biyometrik kimlik doğrulama
+* Adli bilişim uygulamaları
+* Güvenlik sistemleri
+* Akademik çalışmalar
+* Yapay zekâ ve bilgisayarlı görü projeleri
+
+---
+
+## 👨‍💻 Geliştirici
+
+**Yusuf Emir Şahin**
+
+Adli Bilişim Mühendisliği
+
+Fırat Üniversitesi
